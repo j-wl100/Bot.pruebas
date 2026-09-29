@@ -1,7 +1,7 @@
  const { Telegraf } = require('telegraf');
 
 // 1. Pega aquí el token que te dio @BotFather entre las comillas
-const bot = new Telegraf('TU_TOKEN_DE_BOTFATHER_AQUI');
+const bot = new Telegraf('8766864367:AAEXy5d7hW-tvc38aoX3iwVUFjEUnb8xQQA');
 
 // Comando de bienvenida
 bot.start((ctx) => {
