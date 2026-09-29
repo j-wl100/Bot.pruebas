@@ -14,7 +14,8 @@ server.listen(PORT, () => {
 });
 
 async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+    // Usamos una carpeta de sesión nueva para evitar que arrastre datos viejos
+    const { state, saveCreds } = await useMultiFileAuthState('sesion_zenith_nueva');
     
     const sock = makeWASocket({
         auth: state,
@@ -25,7 +26,7 @@ async function connectToWhatsApp() {
 
     // Código de emparejamiento por número de teléfono
     if(!sock.authState.creds.registered) {
-        // REEMPLAZA ESTE NÚMERO con tu número secundario (código de país + número, sin signos ni espacios, ej: 52155XXXXXXXX)
+        // REEMPLAZA ESTE NÚMERO con tu número secundario (código de país + número, sin espacios ni signos, ej: 52155XXXXXXXX)
         const phoneNumber = "528671691201"; 
         
         setTimeout(async () => {
@@ -37,7 +38,7 @@ async function connectToWhatsApp() {
             } catch(err) {
                 console.log('[SYS_ERROR] Error al solicitar el código:', err.message);
             }
-        }, 6000); // Espera 6 segundos para asegurar la conexión inicial
+        }, 6000);
     }
 
     sock.ev.on('connection.update', (update) => {
