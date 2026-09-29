@@ -27,7 +27,7 @@ async function connectToWhatsApp() {
     // Si quieres vincular por código de emparejamiento (opcional si no quieres QR)
     if(!sock.authState.creds.registered) {
         // Puedes poner tu número aquí con código de país (ej: 521XXXXXXXXXX para México)
-        const phoneNumber = "AQUÍ_TU_NUMERO_CON_CODIGO_DE_PAIS"; 
+        const phoneNumber = "52 867 169 1201"; 
         setTimeout(async () => {
             try {
                 let code = await sock.requestPairingCode(phoneNumber);
