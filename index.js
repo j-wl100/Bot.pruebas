@@ -1,33 +1,10 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
-const pino = require('pino');
-const http = require('http');
-const qrcode = require('qrcode-terminal');
-
-// Servidor HTTP para Render
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('ZENITH BOT - ONLINE\n');
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`[SYS_PORT] Servidor escuchando en el puerto ${PORT}`);
-});
-
-async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
-    
-    const sock = makeWASocket({
-        auth: state,
-        logger: pino({ level: 'silent' })
-    });
-
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
         
         if (qr) {
-            console.log('[SYS_QR] Escanea el siguiente código QR con WhatsApp:');
-            qrcode.generate(qr, { small: true });
+            console.log('--- CÓDIGO QR DE WHATSAPP ---');
+            console.log(qr); // Esto imprimirá el código en texto plano o enlazable en los logs
+            qrcode.generate(qr, { small: false });
         }
 
         if(connection === 'close') {
@@ -40,22 +17,3 @@ async function connectToWhatsApp() {
             console.log('[SYS_ONLINE] Bot conectado exitosamente a WhatsApp.');
         }
     });
-
-    sock.ev.on('creds.update', saveCreds);
-
-    sock.ev.on('messages.upsert', async ({ messages }) => {
-        const msg = messages[0];
-        if (!msg.message || msg.key.fromMe) return;
-
-        const sender = msg.key.remoteJid;
-        const messageText = msg.message.conversation || msg.message.extendedTextMessage?.text;
-
-        if (!messageText) return;
-
-        if (messageText.toLowerCase() === '!ping') {
-            await sock.sendMessage(sender, { text: '[SYS_STATUS] ▋ En línea y operando con normalidad.' });
-        }
-    });
-}
-
-connectToWhatsApp();
