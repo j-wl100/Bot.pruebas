@@ -27,7 +27,7 @@ async function connectToWhatsApp() {
     // Código de emparejamiento por número de teléfono
     if(!sock.authState.creds.registered) {
         // REEMPLAZA ESTE NÚMERO con tu número secundario (código de país + número, sin espacios ni signos, ej: 52155XXXXXXXX)
-        const phoneNumber = "528671691201"; 
+        const phoneNumber = "5218671691201"; 
         
         setTimeout(async () => {
             try {
