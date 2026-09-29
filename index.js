@@ -1,9 +1,8 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const http = require('http');
-const readline = require('readline');
 
-// Servidor HTTP para Render
+// Servidor HTTP para cumplir con el requisito de puertos de Render
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('ZENITH BOT - ONLINE\n');
@@ -19,34 +18,31 @@ async function connectToWhatsApp() {
     
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: true,
-        browser: Browsers.macOS("Chrome"), // Simula un navegador para evitar bloqueos
+        printQRInTerminal: false,
+        browser: Browsers.macOS("Chrome"),
         logger: pino({ level: 'silent' })
     });
 
-    // Si quieres vincular por código de emparejamiento (opcional si no quieres QR)
+    // Código de emparejamiento por número de teléfono
     if(!sock.authState.creds.registered) {
-        // Puedes poner tu número aquí con código de país (ej: 521XXXXXXXXXX para México)
-        const phoneNumber = "52 867 169 1201"; 
+        // REEMPLAZA ESTE NÚMERO con tu número secundario (código de país + número, sin signos ni espacios, ej: 52155XXXXXXXX)
+        const phoneNumber = "528671691201"; 
+        
         setTimeout(async () => {
             try {
                 let code = await sock.requestPairingCode(phoneNumber);
-                console.log(`[SYS_PAIRING] Tu código de vinculación es: ${code}`);
+                console.log(`\n========================================`);
+                console.log(`[SYS_PAIRING] CÓDIGO DE VINCULACIÓN: ${code}`);
+                console.log(`========================================\n`);
             } catch(err) {
-                console.log('Error al solicitar código:', err);
+                console.log('[SYS_ERROR] Error al solicitar el código:', err.message);
             }
-        }, 4000);
+        }, 6000); // Espera 6 segundos para asegurar la conexión inicial
     }
 
     sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect, qr } = update;
+        const { connection, lastDisconnect } = update;
         
-        if (qr) {
-            console.log('=== ESCANEA ESTE QR O USA EL CÓDIGO ===');
-            // Si el QR se genera en texto plano legible:
-            console.log(qr);
-        }
-
         if(connection === 'close') {
             const shouldReconnect = (lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut);
             console.log('Conexión cerrada. Reconectando...', shouldReconnect);
@@ -71,6 +67,14 @@ async function connectToWhatsApp() {
 
         if (messageText.toLowerCase() === '!ping') {
             await sock.sendMessage(sender, { text: '[SYS_STATUS] ▋ En línea y operando con normalidad.' });
+        }
+        
+        if (messageText.toLowerCase() === '!menu') {
+            await sock.sendMessage(sender, { 
+                text: '⟨ ☩ ⟩ **ZENITH // SISTEMA CENTRAL**\n\n' +
+                      '🔹 `!ping` - Verifica el estado del núcleo.\n' +
+                      '🔹 `!zenith` - Protocolo de identidad.' 
+            });
         }
     });
 }
