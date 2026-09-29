@@ -1,8 +1,9 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const http = require('http');
+const qrcode = require('qrcode-terminal');
 
-// Servidor HTTP simple para que Render detecte un puerto abierto
+// Servidor HTTP para Render
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('ZENITH BOT - ONLINE\n');
@@ -18,12 +19,17 @@ async function connectToWhatsApp() {
     
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: true,
         logger: pino({ level: 'silent' })
     });
 
     sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, lastDisconnect, qr } = update;
+        
+        if (qr) {
+            console.log('[SYS_QR] Escanea el siguiente código QR con WhatsApp:');
+            qrcode.generate(qr, { small: true });
+        }
+
         if(connection === 'close') {
             const shouldReconnect = (lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut);
             console.log('Conexión cerrada. Reconectando...', shouldReconnect);
@@ -48,10 +54,6 @@ async function connectToWhatsApp() {
 
         if (messageText.toLowerCase() === '!ping') {
             await sock.sendMessage(sender, { text: '[SYS_STATUS] ▋ En línea y operando con normalidad.' });
-        }
-
-        if (messageText.toLowerCase() === '!juego') {
-            await sock.sendMessage(sender, { text: '⟨ ☩ ⟩ Acceso a la zona de juego de la comunidad.' });
         }
     });
 }
