@@ -1,83 +1,81 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
-const pino = require('pino');
-const http = require('http');
+ const { Telegraf } = require('telegraf');
 
-// Servidor HTTP para cumplir con el requisito de puertos de Render
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('ZENITH BOT - ONLINE\n');
+// 1. Pega aquí el token que te dio @BotFather entre las comillas
+const bot = new Telegraf('TU_TOKEN_DE_BOTFATHER_AQUI');
+
+// Comando de bienvenida
+bot.start((ctx) => {
+    ctx.reply('⟨ ☩ ⟩ ZENITH // Núcleo Temporal de Telegram Activo\n\n' +
+              '⚡ El sistema está operando en la nube.');
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`[SYS_PORT] Servidor web activo en el puerto ${PORT}`);
+// Menú principal de comandos
+bot.command('menu', (ctx) => {
+    ctx.reply('⟨ ☩ ⟩ PANEL DE CONTROL ZENITH (TELEGRAM)\n\n' +
+              '🔹 /estado - Verifica si el servidor responde\n' +
+              '🔹 /info - Datos del núcleo\n' +
+              '🔹 /cerrar - (Solo en grupo) Restringe el chat\n' +
+              '🔹 /abrir - (Solo en grupo) Permite hablar a todos');
 });
 
-async function connectToWhatsApp() {
-    // Usamos una carpeta de sesión nueva para evitar que arrastre datos viejos
-    const { state, saveCreds } = await useMultiFileAuthState('sesion_zenith_nueva');
-    
-    const sock = makeWASocket({
-        auth: state,
-        printQRInTerminal: false,
-        browser: Browsers.macOS("Chrome"),
-        logger: pino({ level: 'silent' })
-    });
+bot.command('estado', (ctx) => {
+    ctx.reply('[SYS_STATUS] 🟢 El servidor en Render está en línea y respondiendo 24/7.');
+});
 
-    // Código de emparejamiento por número de teléfono
-    if(!sock.authState.creds.registered) {
-        // REEMPLAZA ESTE NÚMERO con tu número secundario (código de país + número, sin espacios ni signos, ej: 52155XXXXXXXX)
-        const phoneNumber = "5218671691201"; 
-        
-        setTimeout(async () => {
-            try {
-                let code = await sock.requestPairingCode(phoneNumber);
-                console.log(`\n========================================`);
-                console.log(`[SYS_PAIRING] CÓDIGO DE VINCULACIÓN: ${code}`);
-                console.log(`========================================\n`);
-            } catch(err) {
-                console.log('[SYS_ERROR] Error al solicitar el código:', err.message);
-            }
-        }, 6000);
+bot.command('info', (ctx) => {
+    ctx.reply('⟨ ☩ ⟩ Red temporal de administración configurada para Zenith.');
+});
+
+// ==========================================
+// COMANDOS DE ADMINISTRACIÓN PARA GRUPOS
+// ==========================================
+
+// Comando para cerrar el grupo (nadie puede hablar, solo admins)
+bot.command('cerrar', async (ctx) => {
+    try {
+        // Verifica si el comando se usa dentro de un grupo o supergrupo
+        if (ctx.chat.type === 'private') {
+            return ctx.reply('⚠️ Este comando solo se puede usar dentro de un grupo de Telegram.');
+        }
+
+        // Cambia los permisos del chat para restringir mensajes de texto a los miembros
+        await ctx.telegram.setChatPermissions(ctx.chat.id, {
+            can_send_messages: false
+        });
+
+        ctx.reply('🔒 ⟨ ☩ ⟩ ZENITH // Grupo cerrado temporalmente. El núcleo ha restringido el chat.');
+    } catch (error) {
+        console.error(error);
+        ctx.reply('❌ Error: Asegúrate de que el bot sea administrador del grupo con permisos para modificar el chat.');
     }
+});
 
-    sock.ev.on('connection.update', (update) => {
-        const { connection, lastDisconnect } = update;
-        
-        if(connection === 'close') {
-            const shouldReconnect = (lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut);
-            console.log('Conexión cerrada. Reconectando...', shouldReconnect);
-            if(shouldReconnect) {
-                connectToWhatsApp();
-            }
-        } else if(connection === 'open') {
-            console.log('[SYS_ONLINE] Bot conectado exitosamente a WhatsApp.');
+// Comando para abrir el grupo (todos pueden hablar)
+bot.command('abrir', async (ctx) => {
+    try {
+        if (ctx.chat.type === 'private') {
+            return ctx.reply('⚠️ Este comando solo se puede usar dentro de un grupo de Telegram.');
         }
-    });
 
-    sock.ev.on('creds.update', saveCreds);
+        // Restaura los permisos para que los miembros puedan hablar
+        await ctx.telegram.setChatPermissions(ctx.chat.id, {
+            can_send_messages: true,
+            can_send_media_messages: true,
+            can_send_other_messages: true,
+            can_add_web_page_previews: true
+        });
 
-    sock.ev.on('messages.upsert', async ({ messages }) => {
-        const msg = messages[0];
-        if (!msg.message || msg.key.fromMe) return;
+        ctx.reply('🔓 ⟨ ☩ ⟩ ZENITH // Grupo abierto. El chat vuelve a estar disponible.');
+    } catch (error) {
+        console.error(error);
+        ctx.reply('❌ Error: Asegúrate de que el bot sea administrador del grupo.');
+    }
+});
 
-        const sender = msg.key.remoteJid;
-        const messageText = msg.message.conversation || msg.message.extendedTextMessage?.text;
+// Iniciar el bot en la nube
+bot.launch();
+console.log('Bot temporal de Telegram iniciado correctamente en Render...');
 
-        if (!messageText) return;
-
-        if (messageText.toLowerCase() === '!ping') {
-            await sock.sendMessage(sender, { text: '[SYS_STATUS] ▋ En línea y operando con normalidad.' });
-        }
-        
-        if (messageText.toLowerCase() === '!menu') {
-            await sock.sendMessage(sender, { 
-                text: '⟨ ☩ ⟩ **ZENITH // SISTEMA CENTRAL**\n\n' +
-                      '🔹 `!ping` - Verifica el estado del núcleo.\n' +
-                      '🔹 `!zenith` - Protocolo de identidad.' 
-            });
-        }
-    });
-}
-
-connectToWhatsApp();
+// Cierre seguro del servidor
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
