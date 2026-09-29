@@ -1,9 +1,21 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
+const http = require('http');
+
+// Servidor HTTP simple para que Render detecte un puerto abierto
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('ZENITH BOT - ONLINE\n');
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`[SYS_PORT] Servidor escuchando en el puerto ${PORT}`);
+});
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
-
+    
     const sock = makeWASocket({
         auth: state,
         printQRInTerminal: true,
