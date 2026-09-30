@@ -1,13 +1,15 @@
 {
-  "name": "zenith-telegram-bot",
+  "name": "spyct-bot",
   "version": "1.0.0",
-  "description": "Connor OS Bot para Telegram",
+  "description": "Bot de Telegram SPYCT.BOT",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "telegraf": "^4.16.3"
+    "node-telegram-bot-api": "^0.66.0"
+  },
+  "engines": {
+    "node": "18.x || 20.x"
   }
 }
