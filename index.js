@@ -1,4 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
+const http = require('http');
 
 // Usa la variable de entorno de Render o pon tu token directo aquí si prefieres pruebas locales
 const token = process.env.TELEGRAM_TOKEN || '8550303174:AAGJtPRhbPtIuIM5fbR7W5tjPg7H9UilHYY';
@@ -37,7 +38,7 @@ const menus = {
  ⏤    𝖯ᴀʀᴀ ᴠᴇʀ ʟᴏ𝘴 ᴄᴏᴍᴀɴْدᴏs ᴜsᴀ  
 /menu_enlaces
 
-〓©꯭     𝗠 𝖤 ℕɄ  𝖢𝗢𝖬𝖯𝖫𝖤꓄Ø 
+〓©꯭     𝗠 𝖤 ℕɄ  𝖢𝗢𝅏𝖬𝖯𝖫𝖤꓄Ø 
  ⏤    𝖯ᴀʀᴀ ᴠᴇʀ ʟᴏ𝘴 ᴄᴏᴍᴀɴᴅᴏ𝙨 ᴜsᴀ
 /menu_completo
 
@@ -281,10 +282,10 @@ bot.onText(/\/menu_completo/, (msg) => {
     const username = msg.from.username || msg.from.first_name;
     bot.sendMessage(chatId, menus.menu_completo(username));
 });
+
 // ==========================================
 // SERVIDOR HTTP PARA RENDER (Mantiene el puerto abierto y gratis)
 // ==========================================
-const http = require('http');
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer((req, res) => {
