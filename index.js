@@ -1,159 +1,283 @@
-const { Telegraf } = require('telegraf');
-const express = require('express');
+const TelegramBot = require('node-telegram-bot-api');
 
-const app = express();
-const PORT = process.env.PORT || 10000;
+// Usa la variable de entorno de Render o pon tu token directo aquí si prefieres pruebas locales
+const token = process.env.TELEGRAM_TOKEN || 'TU_TOKEN_DE_BOTFATHER_AQUI';
+const bot = new TelegramBot(token, { polling: true });
 
-app.get('/', (req, res) => {
-    res.send('⟨ ☩ ⟩ Servidor Activo y Operativo.');
+console.log("🔥 SPYCT.BOT está encendido y listo en el sistema...");
+
+// ==========================================
+// DICCIONARIO DE MENÚS (Puedes editar los textos aquí libremente)
+// ==========================================
+
+const menus = {
+    menu: (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
+      
+%＿＿         𝗕𝖨𝖾𝗇𝗏𝖾𝗇𝗂𝖽x      #!?    𝖠𝗅 𝗺𝗲𝗻𝘂 𝗉𝗋𝗂𝗇𝖼𝗂𝗉𝖺𝗅  
+
+!▛      solicitado por @${user}          𔖢𔖢
+
+〓©꯭           𝗘𝖢ꄲ𝖭Ө𝖬Ｉ𝖠 
+ ⏤    𝖯ᴀʀᴀ ᴠᴇʀ ʟᴏ𝘴 ᴄᴏᴍᴀɴᴅᴏs ᴜsᴀ  
+/menu_economia
+
+〓©꯭          𝗣𝖤ꋪ𝖥𝖨L‌  
+ ⏤    𝖯ᴀʀᴀ ᴠᴇʀ ʟᴏ𝘴 ᴄᴏᴍᴀɴْدᴏs ᴜsᴀ  
+/menu_perfil
+
+〓©꯭          𝗚 𝖠 ᛖ𝐄ֆ
+ ⏤    𝖯ᴀʀᴀ ᴠᴇʀ ʟᴏ𝘴 ᴄᴏᴍᴀɴْدᴏs ᴜsᴀ  
+/menu_games
+ 
+〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬   
+ ⏤    𝖯ᴀʀᴀ ᴠᴇʀ ʟᴏ𝘴 ᴄᴏᴍᴀɴْدᴏs ᴜsᴀ  
+/menu_random
+
+〓©꯭           𝗘 𝖭 L‌ 𐌀𝖢 𝖤 § 
+ ⏤    𝖯ᴀʀᴀ ᴠᴇʀ ʟᴏ𝘴 ᴄᴏᴍᴀɴْدᴏs ᴜsᴀ  
+/menu_enlaces
+
+〓©꯭     𝗠 𝖤 ℕɄ  𝖢𝗢𝖬𝖯𝖫𝖤꓄Ø 
+ ⏤    𝖯ᴀʀᴀ ᴠᴇʀ ʟᴏ𝘴 ᴄᴏᴍᴀɴᴅᴏ𝙨 ᴜsᴀ
+/menu_completo
+
+〓©꯭          𝗠ꄲ𝖣𝗘Я𝖠匚꒐ӨΝ
+ ⏤    𝖯ᴀʀᴀ ᴠᴇʀ ʟᴏ𝘴 ᴄᴏᴍᴀɴْدᴏs ᴜsᴀ 
+/menu_moderacion
+
+#𝖲𝗈𝗇 𝗈𝗇𝗅𝗒 𝖺𝖽𝗆𝗂𝗇s`,
+
+    menu_economia: `〓©꯭           𝗘𝖢ꄲ𝖭Ө𝖬Ｉ𝖠 
+
+/apostar - cantidad
+/diaro - reclama
+/trabajar  [puesto]
+/robar  @user
+/banco [cantidad] 
+/transferir @user [cantidad]
+/balance 
+/top @me/all
+/loteria 
+/crimen
+/invertir
+/minar`,
+
+    menu_perfil: `〓©꯭          𝗣𝖤ꋪ𝖥𝖨L‌  
+
+/perfil [@user]
+/desc [texto]
+/perfilgenero [mujer/hombre/enby/otro]
+/perfilorientacion [bisexual/otro]
+/perfilpaís [texto]
+/perfilpronombres [he/she/otro]
+/perfilcumpleaños [DD/MM]
+/perfiltitulo [texto]
+/nivel 
+/inventario
+/regalo @user [regalo]`,
+
+    menu_games: `〓©꯭          𝗚 𝖠 ᛖ𝐄ֆ
+
+/caraocruz [cantidad] [cara o cruz]
+/dado [cantidad]
+/ppt [piedra/papel/tijera] [@user]
+/trivia
+/adivinanza
+/reto
+/chiste
+/frase
+/ruleta
+/ahorcado`,
+
+    menu_random: `〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬   
+
+/clima [ciudad/pais]
+/hora [pais/ciudad]
+/distancia [lugar uno/lugar dos]
+/calculadora [cifra]
+/estadísticas 
+/significado [palabra]
+/traducir - idioma [texto]
+/wiki [busqueda] 
+/elegir [opcion/opcion]
+/sticker [imagen]`,
+
+    menu_enlaces: `»      🔗     |───────────  ●●  ┘
+
+/reglas
+/web_oficial -> [Inserta tu enlace aquí]
+/cuenta_tiktok -> [Inserta tu enlace aquí]
+/community_whatsapp -> [Inserta tu enlace aquí]
+/canal_oficial -> [Inserta tu enlace aquí]
+/canal_codigos -> [Inserta tu enlace aquí]
+
+─────────────────────┘`,
+
+    menu_moderacion: `〓©꯭          𝗠ꄲ𝖣𝗘Я𝖠匚꒐ӨΝ
+
+/ban @user
+/unban @user
+/mute  @user [tiempo]
+/unmute @user
+/onlyadmin on
+/onlyadmin off
+/warn @user [razón]
+/unwarn  @user 
+/cerrar
+/abrir
+/antispam 
+/antispam off
+/antinsfw on
+/antinstw off
+/antilink on
+/antilink off
+/chatreset
+/modeverificaty
+/stats
+/actividad
+/config 
+/deladmin @user
+/addadmin @user
+/resetuser @user
+/ping`,
+
+    menu_completo: (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
+      
+%＿＿         𝗕𝖨𝖾𝗇𝗏𝖾𝗇𝗂𝖽x       #!?    𝖠𝗅 𝗺𝗲𝗻𝘂 𝖼𝗈𝗆𝗉𝗅𝖾𝗍𝗈   
+
+!▛      solicitado por @${user}          𔖢𔖢
+
+〓©꯭           𝗘𝖢ꄲ𝖭Ө𝖬Ｉ𝖠 
+
+/apostar - cantidad
+/diaro - reclama
+/trabajar  [puesto]
+/robar  @user
+/banco [cantidad] 
+/transferir @user [cantidad]
+/balance 
+/top @me/all
+/loteria 
+/crimen
+/invertir
+/minar
+
+〓©꯭          𝗣𝖤ꋪ𝖥𝖨L‌  
+
+/perfil [@user]
+/desc [texto]
+/perfilgenero [mujer/hombre/enby/otro]
+/perfilorientacion [bisexual/otro]
+/perfilpaís [texto]
+/perfilpronombres [he/she/otro]
+/perfilcumpleaños [DD/MM]
+/perfiltitulo [texto]
+/nivel 
+/inventario
+/regalo @user [regalo]
+
+〓©꯭          𝗚 𝖠 ᛖ𝐄ֆ
+
+/caraocruz [cantidad] [cara o cruz]
+/dado [cantidad]
+/ppt [piedra/papel/tijera] [@user]
+/trivia
+/adivinanza
+/reto
+/chiste
+/frase
+/ruleta
+/ahorcado
+
+〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬   
+
+/clima [ciudad/pais]
+/hora [pais/cuidad]
+/distancia [lugar uno/lugar dos]
+/calculadora [sifra]
+/estadísticas 
+/significado [palabra]
+/traducir - idioma [texto]
+/wiki [busqueda] 
+/elegir [opcion/opcion]
+/sticker [imagen]
+
+»      🔗     |───────────  ●●  ┘
+
+/reglas
+/web_oficial
+/cuenta_tiktok
+/community_whatsapp 
+/canal_oficial
+/canal_codigos
+
+─────────────────────┘
+
+〓©꯭          𝗠ꄲ𝖣𝗘Я𝖠匚꒐ӨΝ
+
+/ban @user
+/unban @user
+/mute  @user [tiempo]
+/unmute @user
+/onlyadmin on
+/onlyadmin off
+/warn @user [razón]
+/unwarn  @user 
+/cerrar
+/abrir
+/antispam 
+/antispam off
+/antinsfw on
+/antinstw off
+/antilink on
+/antilink off
+/chatreset
+/modeverificaty
+/stats
+/actividad
+/config 
+/deladmin @user
+/addadmin @user
+/resetuser @user
+/ping`
+};
+
+// ==========================================
+// CONFIGURACIÓN DE RESPUESTAS A COMANDOS
+// ==========================================
+
+bot.onText(/\/menu(?!\S)/, (msg) => {
+    const chatId = msg.chat.id;
+    const username = msg.from.username || msg.from.first_name;
+    bot.sendMessage(chatId, menus.menu(username));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[SYS] Servidor HTTP en puerto ${PORT}`);
+bot.onText(/\/menu_economia/, (msg) => {
+    bot.sendMessage(msg.chat.id, menus.menu_economia);
 });
 
-// Reemplaza con tu token nuevo
-const bot = new Telegraf('8871233471:AAGwFEoIlKxg5IaHemqc0x2xLEJWsR63_cc');
-
-const usuariosDB = {};
-const antispamDB = {};      
-const advertenciasDB = {};  
-const palabrasProhibidas = ['spam', 'porno', 'nsfw', '18+', 'scam', 'phishing', 't.me/joinchat'];
-
-function obtenerPerfil(ctx) {
-    const userId = ctx.from.id;
-    if (!usuariosDB[userId]) {
-        usuariosDB[userId] = {
-            nombre: ctx.from.first_name || 'Agente',
-            creditos: 100,
-            nivel: 1
-        };
-    }
-    return usuariosDB[userId];
-}
-
-// Núcleo de seguridad básico
-bot.on('message', async (ctx, next) => {
-    if (!ctx.chat || ctx.chat.type === 'private') return next();
-    if (!ctx.from) return next();
-
-    const userId = ctx.from.id;
-    const texto = (ctx.message.text || ctx.message.caption || '').toLowerCase();
-    
-    if (palabrasProhibidas.some(p => texto.includes(p))) {
-        await ctx.deleteMessage().catch(() => {});
-        advertenciasDB[userId] = (advertenciasDB[userId] || 0) + 1;
-        ctx.reply(`⚠ Contenido prohibido detectado. Advertencia [${advertenciasDB[userId]}/3].`);
-        return;
-    }
-
-    return next();
+bot.onText(/\/menu_perfil/, (msg) => {
+    bot.sendMessage(msg.chat.id, menus.menu_perfil);
 });
 
-// Comandos
-bot.start((ctx) => ctx.reply('🤖 ¡Bot multifunción activo! Escribe /menu para ver los comandos.'));
-
-bot.command('menu', (ctx) => {
-    ctx.reply('📂 **DIRECTORIO DE COMANDOS**\n\n' +
-              '🛡️ **Seguridad:** /cerrar, /abrir\n' +
-              '🎵 **Multimedia:** /music [canción], /pelicula\n' +
-              '🎮 **Entretenimiento:** /apostar [monto], /chiste, /oraculo\n' +
-              '🛠️ **Utilidades:** /clima [ciudad], /calcular\n' +
-              '👤 **Perfil:** /perfil, /diario');
+bot.onText(/\/menu_games/, (msg) => {
+    bot.sendMessage(msg.chat.id, menus.menu_games);
 });
 
-bot.command('cerrar', async (ctx) => {
-    if (ctx.chat.type === 'private') return ctx.reply('❌ Solo para grupos.');
-    try {
-        await ctx.telegram.setChatPermissions(ctx.chat.id, { can_send_messages: false });
-        ctx.reply('🔒 Chat cerrado administrativamente.');
-    } catch (e) {
-        ctx.reply('❌ Error: Necesito permisos de administrador.');
-    }
+bot.onText(/\/menu_random/, (msg) => {
+    bot.sendMessage(msg.chat.id, menus.menu_random);
 });
 
-bot.command('abrir', async (ctx) => {
-    if (ctx.chat.type === 'private') return ctx.reply('❌ Solo para grupos.');
-    try {
-        await ctx.telegram.setChatPermissions(ctx.chat.id, { 
-            can_send_messages: true, 
-            can_send_media_messages: true, 
-            can_send_other_messages: true 
-        });
-        ctx.reply('🔓 Chat abierto.');
-    } catch (e) {
-        ctx.reply('❌ Error: Necesito permisos de administrador.');
-    }
+bot.onText(/\/menu_enlaces/, (msg) => {
+    bot.sendMessage(msg.chat.id, menus.menu_enlaces);
 });
 
-bot.command('music', async (ctx) => {
-    const query = ctx.message.text.replace('/music', '').trim();
-    if (!query) return ctx.reply('🎵 Uso: /music [nombre de la canción]');
-    const musicUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query + " audio oficial")}`;
-    ctx.reply(`🎶 **Resultado musical para:** \`${query}\``, {
-        parse_mode: 'Markdown',
-        reply_markup: { inline_keyboard: [[{ text: '🎧 Escuchar en YouTube', url: musicUrl }]] }
-    });
+bot.onText(/\/menu_moderacion/, (msg) => {
+    bot.sendMessage(msg.chat.id, menus.menu_moderacion);
 });
 
-bot.command('pelicula', (ctx) => {
-    const q = ctx.message.text.replace('/pelicula', '').trim();
-    if (!q) return ctx.reply('🎬 Uso: /pelicula [nombre]');
-    ctx.reply(`🍿 **Cine:** ${q}\n🔗 https://www.google.com/search?q=pelicula+${encodeURIComponent(q)}`, { parse_mode: 'Markdown' });
+bot.onText(/\/menu_completo/, (msg) => {
+    const chatId = msg.chat.id;
+    const username = msg.from.username || msg.from.first_name;
+    bot.sendMessage(chatId, menus.menu_completo(username));
 });
-
-bot.command('apostar', (ctx) => {
-    const p = obtenerPerfil(ctx);
-    const monto = parseInt(ctx.message.text.split(' ')[1]);
-    if (isNaN(monto) || monto <= 0) return ctx.reply('🎲 Uso: /apostar [cantidad]');
-    if (p.creditos < monto) return ctx.reply(`❌ No tienes suficientes créditos. Tienes ${p.creditos}.`);
-
-    if (Math.random() < 0.5) {
-        p.creditos += monto;
-        ctx.reply(`🎉 ¡Ganaste! +${monto} créditos. Balance: ${p.creditos}`);
-    } else {
-        p.creditos -= monto;
-        ctx.reply(`💀 Perdiste. -${monto} créditos. Balance: ${p.creditos}`);
-    }
-});
-
-bot.command('chiste', (ctx) => {
-    const chistes = [
-        '— ¿Qué hace una abeja en el gimnasio? — ¡Zumba!',
-        '— Hola, ¿está Agustín? — No, estoy incomodísimo.',
-        '— ¿Por qué los pájaros vuelan al sur en invierno? — ¡Porque caminando tardan demasiado!'
-    ];
-    ctx.reply(chistes[Math.floor(Math.random() * chistes.length)]);
-});
-
-bot.command('oraculo', (ctx) => {
-    const respuestas = ['Es altamente probable.', 'Ni lo sueñes.', 'Las señales apuntan a que sí.', 'Jamás sucederá.'];
-    ctx.reply(`🔮 ${respuestas[Math.floor(Math.random() * respuestas.length)]}`);
-});
-
-bot.command('clima', async (ctx) => {
-    const ciudad = ctx.message.text.replace('/clima', '').trim();
-    if (!ciudad) return ctx.reply('🌤️ Uso: /clima [ciudad]');
-    try {
-        const res = await fetch(`https://wttr.in/${encodeURIComponent(ciudad)}?format=3&lang=es`);
-        const text = await res.text();
-        ctx.reply(`🌤️ **Clima:** ${text}`);
-    } catch (e) {
-        ctx.reply('❌ Error al consultar el clima.');
-    }
-});
-
-bot.command('perfil', (ctx) => {
-    const p = obtenerPerfil(ctx);
-    ctx.reply(`👤 **Perfil:** ${p.nombre}\n🪙 Créditos: ${p.creditos}`);
-});
-
-bot.command('diario', (ctx) => {
-    const p = obtenerPerfil(ctx);
-    p.creditos += 50;
-    ctx.reply(`🎁 ¡Has reclamado +50 créditos! Balance: ${p.creditos}`);
-});
-
-bot.launch().then(() => console.log('Bot iniciado correctamente.'));
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
