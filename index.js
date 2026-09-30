@@ -21,7 +21,7 @@ const usuariosDB = {};
 const antispamDB = {};      
 const advertenciasDB = {};  
 
-const palabrasProhibidas = ['spam', 'porno', 'nsfw', '18+', 'scam', 'phishing', 't.me/joinchat'];
+const palabrasProhibidas = ['porno', 'nsfw', '18+', 'scam', 'phishing', 't.me/joinchat'];
 
 function obtenerPerfil(ctx) {
     const userId = ctx.from.id;
@@ -39,7 +39,7 @@ function obtenerPerfil(ctx) {
 }
 
 // ==========================================
-// 🛡️ NÚCLEO DE PROTECCIÓN AVANZADA & FLOOD
+// 🛡️ NÚCLEO DE PROTECCIÓN BÁSICA (SIN CHEQUEO DE CANAL)
 // ==========================================
 bot.on('message', async (ctx, next) => {
     if (!ctx.chat || ctx.chat.type === 'private') return next();
@@ -50,13 +50,6 @@ bot.on('message', async (ctx, next) => {
     const ahora = Date.now();
 
     try {
-        const miembroChat = await ctx.telegram.getChatMember(ctx.chat.id, userId);
-        const esAdminOPropietario = miembroChat.status === 'creator' || miembroChat.status === 'administrator';
-
-        if (esAdminOPropietario) {
-            return next(); 
-        }
-
         const textoMinuscula = mensajeTexto.toLowerCase();
         const contieneProhibida = palabrasProhibidas.some(palabra => textoMinuscula.includes(palabra));
 
@@ -65,14 +58,7 @@ bot.on('message', async (ctx, next) => {
             if (!advertenciasDB[userId]) advertenciasDB[userId] = 0;
             advertenciasDB[userId] += 1;
             
-            if (advertenciasDB[userId] >= 3) {
-                const unHourLater = Math.floor(Date.now() / 1000) + 3600;
-                await ctx.restrictChatMember(userId, { until_date: unHourLater, permissions: { can_send_messages: false } }).catch(() => {});
-                ctx.reply(`[SYS_WARN] Agente ${ctx.from.first_name} neutralizado temporalmente (1h) por infracción crítica.`);
-                advertenciasDB[userId] = 0;
-            } else {
-                ctx.reply(`[SYS_ALERT] Contenido prohibido detectado de ${ctx.from.first_name}. Advertencia [${advertenciasDB[userId]}/3].`);
-            }
+            ctx.reply(`[SYS_ALERT] Contenido prohibido detectado de ${ctx.from.first_name}. Advertencia [${advertenciasDB[userId]}/3].`);
             return;
         }
 
@@ -83,27 +69,9 @@ bot.on('message', async (ctx, next) => {
         antispamDB[userId].timestamps = antispamDB[userId].timestamps.filter(t => ahora - t < 5000);
         antispamDB[userId].timestamps.push(ahora);
 
-        const totalRecientes = antispamDB[userId].timestamps.length;
-
-        if (totalRecientes >= 5) {
+        if (antispamDB[userId].timestamps.length >= 5) {
             await ctx.deleteMessage().catch(() => {});
-            if (!advertenciasDB[userId]) advertenciasDB[userId] = 0;
-            advertenciasDB[userId] += 2; 
-
-            ctx.reply(`[SYS_SECURITY_PURGE] Actividad de flood masivo detectada de ${ctx.from.first_name}. Mensaje eliminado.`);
-            
-            if (advertenciasDB[userId] >= 5) {
-                const muteTime = Math.floor(Date.now() / 1000) + 7200; 
-                await ctx.restrictChatMember(userId, { until_date: muteTime, permissions: { can_send_messages: false } }).catch(() => {});
-                ctx.reply(`[SYS_LOCKDOWN] El nodo ${ctx.from.first_name} ha sido silenciado por 2 horas debido a flood.`);
-                advertenciasDB[userId] = 0;
-            }
-            return;
-        }
-
-        if (totalRecientes === 3) {
-            await ctx.deleteMessage().catch(() => {});
-            ctx.reply(`[SYS_THROTTLE] Advertencia de flujo para ${ctx.from.first_name}: Reduzca la velocidad de transmisión.`);
+            ctx.reply(`[SYS_SECURITY_PURGE] Actividad de flood detectada de ${ctx.from.first_name}. Mensaje eliminado.`);
             return;
         }
 
@@ -207,11 +175,7 @@ bot.command('sistema', (ctx) => {
 
 bot.command('modo_admin', async (ctx) => {
     if (ctx.chat.type === 'private') return ctx.reply('[SYS_ERROR] Solo en grupos.');
-    const member = await ctx.telegram.getChatMember(ctx.chat.id, ctx.from.id);
-    if (member.status !== 'creator' && member.status !== 'administrator') {
-        return ctx.reply('[SYS_DENIED] Acceso exclusivo para administradores.');
-    }
-    ctx.reply(`⟨ ☩ ⟩ PANEL ADMIN\nESTADO: Operativo\nFiltro Flood & Inmunidad: Activos.`);
+    ctx.reply(`⟨ ☩ ⟩ PANEL ADMIN\nESTADO: Operativo\nFiltro Antispam: Activo.`);
 });
 
 bot.command('bloquear', async (ctx) => {
