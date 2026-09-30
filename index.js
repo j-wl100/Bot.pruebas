@@ -1,27 +1,29 @@
 const { Telegraf } = require('telegraf');
 const express = require('express');
 
-// 1. Configuración del Servidor Express para mantener vivo el bot en Render
+// 1. Configuración robusta del Servidor Express para Render
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
     res.send('⟨ ☩ ⟩ ZENITH // Connor OS Core - Active and Running.');
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`[SYS_WEB] Servidor HTTP escuchando en el puerto ${PORT}`);
 });
 
-// 2. Token de BotFather
-const bot = new Telegraf('8766864367:AAF6wHe3oznvIZM6A7sHjFGy7LB4zZhCQO0');
+// 2. Token de BotFather (Asegúrate de pegar tu token real aquí)
+const bot = new Telegraf('8766864367:AAF6wHe3oznvIZM6A7s
+
+HjFGy7LB4zZhCQO0');
 
 // Bases de datos en memoria
 const usuariosDB = {};
 const antispamDB = {};      
 const advertenciasDB = {};  
 
-const palabrasProhibidas = ['porno', 'nsfw', '18+', 'scam', 'phishing', 't.me/joinchat'];
+const palabrasProhibidas = ['spam', 'porno', 'nsfw', '18+', 'scam', 'phishing', 't.me/joinchat'];
 
 function obtenerPerfil(ctx) {
     const userId = ctx.from.id;
@@ -39,7 +41,7 @@ function obtenerPerfil(ctx) {
 }
 
 // ==========================================
-// 🛡️ NÚCLEO DE PROTECCIÓN BÁSICA (SIN CHEQUEO DE CANAL)
+// 🛡️ NÚCLEO DE PROTECCIÓN BÁSICA
 // ==========================================
 bot.on('message', async (ctx, next) => {
     if (!ctx.chat || ctx.chat.type === 'private') return next();
@@ -198,8 +200,12 @@ bot.command('desbloquear', async (ctx) => {
     }
 });
 
-bot.launch();
-console.log('[SYS_BOOT] Connor OS v5.0 inicializado con éxito.');
+// Inicialización segura del bot con manejo de errores
+bot.launch().then(() => {
+    console.log('[SYS_BOOT] Connor OS v5.0 inicializado con éxito en Render.');
+}).catch((err) => {
+    console.error('[ERROR_LAUNCH]', err);
+});
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
