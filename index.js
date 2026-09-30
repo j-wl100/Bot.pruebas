@@ -11,13 +11,13 @@ const bot = new TelegramBot(token, { polling: true });
 
 console.log("SPYCT.BOT está encendido y listo en el sistema...");
 
-// Base de datos de usuarios y configuraciones de grupos
+// Base de datos en memoria para usuarios y grupos
 const usuariosData = {};
 const gruposConfig = {};
 
 function getUsuario(userId) {
     if (!usuariosData[userId]) {
-        usuariosData[userId] = { balance: 1000, banco: 5000, nivel: 1 };
+        usuariosData[userId] = { balance: 1000, banco: 5000, nivel: 1, exp: 0 };
     }
     return usuariosData[userId];
 }
@@ -66,26 +66,27 @@ const menus = {
     menu_economia: `〓©꯭           𝗘𝖢ꄲ𝖬Ө𝖬Ｉ𝖠 
 
 /apostar [cantidad]
-/diario - reclama tu bono
+/diario - reclama tu bono de dinero
 /trabajar [uber/ropa/vida_galante/comida/repartidor/albanil/telcel/limpiador/fotografo/default]
-/banco [cantidad] 
+/robar [@user] - intenta robar a un usuario
+/banco [depositar/retirar cantidad] 
 /balance`,
 
     menu_perfil: `〓©꯭          𝗣𝖤ꋪ𝖥𝖨L‌  
-/perfil [@user]
-/nivel`,
+/perfil [@user] - muestra tu tarjeta de perfil
+/nivel - consulta tu nivel y experiencia actual`,
 
     menu_games: `〓©꯭          𝗚 𝖠 ᛖ𝐄ֆ
 /caraocruz [cantidad] [cara/cruz]
 /ppt [piedra/papel/tijera]
-/chiste
-/frase`,
+/chiste - cuenta un chiste aleatorio
+/frase - frase motivacional del sistema`,
 
     menu_random: `〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬   
-/clima [ciudad]
-/hora [zona horaria o pais]
-/calculadora [operacion matematica]
-/wiki [busqueda real]`,
+/clima [ciudad] - clima en tiempo real
+/hora [zona horaria] - hora oficial global
+/calculadora [operacion] - resuelve mates
+/wiki [busqueda] - consulta Wikipedia`,
 
     menu_enlaces: `»      🔗     |───────────  ●●  ┘
 /reglas
@@ -95,16 +96,16 @@ const menus = {
 ─────────────────────┘`,
 
     menu_moderacion: `〓©꯭          𝗠ꄲ𝣣𝗘Я𝖠匚꒐ӨΝ & 𝖲𝖳𝖠𝖳𝖲
-/abrir - Abre el grupo para hablar
-/cerrar - Cierra el grupo (solo admins)
-/antilink [on/off] - Filtro de enlaces
-/nsfw [on/off] - Control de contenido
-/stats - Ver estado actual de opciones
-/ban @user - Expulsar usuario`
+/abrir - Abre el chat para todos
+/cerrar - Cierra el chat (solo admins)
+/antilink [on/off] - Filtro automático de links
+/nsfw [on/off] - Control estricto de contenido
+/stats - Ver estadísticas y estado activo del chat
+/ban - Expulsa a un usuario (respondiendo a su mensaje)`
 };
 
 // ==========================================
-// BANCO DE TRABAJOS (4 variantes por cada uno de los 10 trabajos)
+// BANCO DE TRABAJOS (4 variantes exactas por cada uno de los 10 trabajos)
 // ==========================================
 const trabajosData = {
     uber: [
@@ -140,7 +141,7 @@ const trabajosData = {
     albanil: [
         "🧱 Levantaste un muro de ladrillos perfecto bajo el sol intenso de la tarde. Ganaste **$400**.",
         "⚖️ Mezclaste cemento y ayudaste a vaciar la losa principal de la obra. Recibiste **$450**.",
-        "🏗️️ Hiciste reparaciones de plomería y acabados finos en una fachada. Ganaste **$380**.",
+        "🏗️ Hiciste reparaciones de plomería y acabados finos en una fachada. Ganaste **$380**.",
         "👷‍♂️ El contratista principal valoró tu esfuerzo físico diario y te pagó **$550**."
     ],
     telcel: [
@@ -170,11 +171,9 @@ const trabajosData = {
 };
 
 // ==========================================
-// COMANDOS DE MENÚS
+// COMANDOS DE MENÚS PRINCIPALES
 // ==========================================
-bot.onText(/\/menu(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, menus.menu(msg.from.username || msg.from.first_name));
-});
+bot.onText(/\/menu(?!\S)/, (msg) => bot.sendMessage(msg.chat.id, menus.menu(msg.from.username || msg.from.first_name)));
 bot.onText(/\/menu_economia/, (msg) => bot.sendMessage(msg.chat.id, menus.menu_economia));
 bot.onText(/\/menu_perfil/, (msg) => bot.sendMessage(msg.chat.id, menus.menu_perfil));
 bot.onText(/\/menu_games/, (msg) => bot.sendMessage(msg.chat.id, menus.menu_games));
@@ -183,104 +182,22 @@ bot.onText(/\/menu_enlaces/, (msg) => bot.sendMessage(msg.chat.id, menus.menu_en
 bot.onText(/\/menu_moderacion/, (msg) => bot.sendMessage(msg.chat.id, menus.menu_moderacion));
 
 // ==========================================
-// COMANDOS DE MODERACIÓN Y ESTADÍSTICAS (STATS)
+// MÓDULO DE PERFIL Y ESTADÍSTICAS DE USUARIO
 // ==========================================
-
-// Abrir grupo
-bot.onText(/\/abrir/, async (msg) => {
-    const chatId = msg.chat.id;
-    try {
-        await bot.setChatPermissions(chatId, {
-            can_send_messages: true,
-            can_send_media_messages: true,
-            can_send_other_messages: true,
-            can_add_web_page_previews: true
-        });
-        const config = getGrupoConfig(chatId);
-        config.abierto = true;
-        bot.sendMessage(chatId, "🔓 **GRUPO ABIIERTO**\n\nTodos los miembros ya pueden enviar mensajes nuevamente.");
-    } catch (e) {
-        bot.sendMessage(chatId, "❌ No se pudo abrir el grupo. Asegúrate de que el bot sea Administrador con permisos.");
-    }
+bot.onText(/\/perfil/, (msg) => {
+    const user = getUsuario(msg.from.id);
+    const nombre = msg.from.first_name;
+    const username = msg.from.username ? `@${msg.from.username}` : 'Sin username';
+    bot.sendMessage(msg.chat.id, `👤 **TARJETA DE PERFIL**\n\n📌 Nombre: ${nombre}\n🏷️ Usuario: ${username}\n⭐ Nivel: ${user.nivel}\n📈 Experiencia: ${user.exp}/100\n💵 Efectivo: $${user.balance}\n💳 Banco: $${user.banco}`, { parse_mode: 'Markdown' });
 });
 
-// Cerrar grupo
-bot.onText(/\/cerrar/, async (msg) => {
-    const chatId = msg.chat.id;
-    try {
-        await bot.setChatPermissions(chatId, {
-            can_send_messages: false
-        });
-        const config = getGrupoConfig(chatId);
-        config.abierto = false;
-        bot.sendMessage(chatId, "🔒 **GRUPO CERRADO**\n\nEl grupo ha sido cerrado temporalmente por los administradores.");
-    } catch (e) {
-        bot.sendMessage(chatId, "❌ No se pudo cerrar el grupo. Asegúrate de que el bot sea Administrador.");
-    }
-});
-
-// Antilink ON/OFF
-bot.onText(/\/antilink\s+(on|off)/i, (msg, match) => {
-    const chatId = msg.chat.id;
-    const estado = match[1].toLowerCase() === 'on';
-    const config = getGrupoConfig(chatId);
-    config.antilink = estado;
-    bot.sendMessage(chatId, `🛡️ **Filtro Antilink:** ${estado ? '✅ ACTIVADO (Se eliminarán enlaces externos)' : '❌ DESACTIVADO'}`);
-});
-
-// NSFW ON/OFF
-bot.onText(/\/nsfw\s+(on|off)/i, (msg, match) => {
-    const chatId = msg.chat.id;
-    const estado = match[1].toLowerCase() === 'on';
-    const config = getGrupoConfig(chatId);
-    config.nsfw = estado;
-    bot.sendMessage(chatId, `🔞 **Control NSFW:** ${estado ? '✅ ACTIVADO (Protección estricta contra contenido explícito)' : '❌ DESACTIVADO'}`);
-});
-
-// Panel de Estadísticas (STATS)
-bot.onText(/\/stats/, (msg) => {
-    const chatId = msg.chat.id;
-    const config = getGrupoConfig(chatId);
-    bot.sendMessage(chatId, `📊 **ESTADÍSTICAS Y ESTADO DEL CHAT**\n\n🔓 Estado del grupo: ${config.abierto ? 'Abierto' : 'Cerrado'}\n🛡️ Antilink: ${config.antilink ? '🟢 Activado' : '🔴 Desactivado'}\n🔞 Control NSFW: ${config.nsfw ? '🟢 Activado' : '🔴 Desactivado'}\n🤖 Estado del Bot: 100% Operativo`, { parse_mode: 'Markdown' });
-});
-
-// Moderador Ban
-bot.onText(/\/ban/, async (msg) => {
-    const chatId = msg.chat.id;
-    if (msg.reply_to_message) {
-        const userIdToBan = msg.reply_to_message.from.id;
-        try {
-            await bot.banChatMember(chatId, userIdToBan);
-            bot.sendMessage(chatId, `🔨 El usuario ha sido expulsado correctamente del grupo.`);
-        } catch (e) {
-            bot.sendMessage(chatId, `❌ No se pudo banear al usuario. Verifica que el bot sea administrador.`);
-        }
-    } else {
-        bot.sendMessage(chatId, `⚠️ Responde al mensaje del usuario que deseas banear con el comando \`/ban\`.`);
-    }
+bot.onText(/\/nivel/, (msg) => {
+    const user = getUsuario(msg.from.id);
+    bot.sendMessage(msg.chat.id, `⭐ Tu nivel actual es **${user.nivel}** con **${user.exp}** puntos de experiencia acumulados. ¡Sigue activo para subir de rango!`);
 });
 
 // ==========================================
-// FILTRO ANTILINK AUTOMÁTICO (Escucha mensajes)
-// ==========================================
-bot.on('message', (msg) => {
-    if (!msg.text) return;
-    const chatId = msg.chat.id;
-    const config = gruposConfig[chatId];
-    
-    if (config && config.antilink) {
-        const regexLink = /(https?:\/\/[^\s]+|t\.me\/[^\s]+|www\.[^\s]+)/i;
-        if (regexLink.test(msg.text)) {
-            bot.deleteMessage(chatId, msg.message_id).catch(() => {});
-            bot.sendMessage(chatId, `⚠️ @${msg.from.username || msg.from.first_name}, los enlaces están prohibidos en este grupo (Antilink activo).`).then(sent => {
-                setTimeout(() => bot.deleteMessage(chatId, sent.message_id).catch(() => {}), 5000);
-            });
-        }
-    }
-});
-
-// ==========================================
-// COMANDOS DE ECONOMÍA Y TRABAJOS
+// MÓDULO DE ECONOMÍA Y TRABAJOS
 // ==========================================
 bot.onText(/\/trabajar(?:\s+(.+))?/, (msg, match) => {
     const chatId = msg.chat.id;
@@ -295,8 +212,10 @@ bot.onText(/\/trabajar(?:\s+(.+))?/, (msg, match) => {
     const mensajeAleatorio = variantes[Math.floor(Math.random() * variantes.length)];
 
     user.balance += 350;
+    user.exp += 15;
+    if (user.exp >= 100) { user.nivel += 1; user.exp = 0; }
 
-    bot.sendMessage(chatId, `👷‍♂️ **SISTEMA DE TRABAJO - SPYCT.BOT**\n\n${mensajeAleatorio}\n\n💰 Tu balance actual aumentó. Cartera: **$${user.balance}**`, { parse_mode: 'Markdown' });
+    bot.sendMessage(chatId, `👷‍♂️ **SISTEMA DE TRABAJO - SPYCT.BOT**\n\n${mensajeAleatorio}\n\n💰 Cartera actual: **$${user.balance}** (+15 XP)`, { parse_mode: 'Markdown' });
 });
 
 bot.onText(/\/balance/, (msg) => {
@@ -310,91 +229,99 @@ bot.onText(/\/diario/, (msg) => {
     bot.sendMessage(msg.chat.id, `🎁 ¡Has reclamado tu bono diario de **$1,000**! Cartera actual: $${user.balance}`);
 });
 
-// ==========================================
-// COMANDOS DINÁMICOS REALES (Clima, Hora, Calculadora, Wiki)
-// ==========================================
-
-// 1. CLIMA REAL
-bot.onText(/\/clima(?:\s+(.+))?/, async (msg, match) => {
+bot.onText(/\/banco(?:\s+(depositar|retirar)?\s*(\d+)?)?/i, (msg, match) => {
     const chatId = msg.chat.id;
-    const ciudad = match[1] ? match[1].trim() : 'Mexico';
-    try {
-        const res = await fetch(`https://wttr.in/${encodeURIComponent(ciudad)}?format=j1`);
-        const data = await res.json();
-        const current = data.current_condition[0];
-        const climaTxt = `🌍 **Clima Real en ${ciudad.toUpperCase()}**\n\n🌡️ Temperatura: ${current.temp_C}°C\n☁️ Condición: ${current.weatherDesc[0].value}\n💧 Humedad: ${current.humidity}\%\n💨 Viento: ${current.windspeedKmph} km/h`;
-        bot.sendMessage(chatId, climaTxt, { parse_mode: 'Markdown' });
-    } catch (e) {
-        bot.sendMessage(chatId, `❌ No se pudo obtener el clima para "${ciudad}".`);
+    const user = getUsuario(msg.from.id);
+    const accion = match[1] ? match[1].toLowerCase() : '';
+    const cantidad = parseInt(match[2]);
+
+    if (!accion || isNaN(cantidad)) {
+        return bot.sendMessage(chatId, `🏦 **BANCO CENTRAL**\n\nUsa:\n/banco depositar [cantidad]\n/banco retirar [cantidad]\n\nTu saldo en banco: $${user.banco}`);
+    }
+
+    if (accion === 'depositar') {
+        if (cantidad > user.balance) return bot.sendMessage(chatId, `❌ No tienes tanto efectivo en mano.`);
+        user.balance -= cantidad;
+        user.banco += cantidad;
+        bot.sendMessage(chatId, `✅ Depositaste **$${cantidad}** al banco correctamente.`);
+    } else if (accion === 'retirar') {
+        if (cantidad > user.banco) return bot.sendMessage(chatId, `❌ No tienes tanto dinero ahorrado en el banco.`);
+        user.banco -= cantidad;
+        user.balance += cantidad;
+        bot.sendMessage(chatId, `✅ Retiraste **$${cantidad}** del banco a tu efectivo.`);
     }
 });
 
-// 2. HORA REAL
-bot.onText(/\/hora(?:\s+(.+))?/, (msg, match) => {
-    const chatId = msg.chat.id;
-    const zona = match[1] ? match[1].trim() : 'America/Mexico_City';
-    try {
-        const horaActual = new Date().toLocaleString('es-ES', { timeZone: zona, dateStyle: 'full', timeStyle: 'medium' });
-        bot.sendMessage(chatId, `⏰ **Hora Oficial Global**\n\n📍 Zona: \`${zona}\`\n🕒 ${horaActual}`, { parse_mode: 'Markdown' });
-    } catch (e) {
-        bot.sendMessage(chatId, `❌ Zona horaria no válida. Ejemplos: \`America/Mexico_City\`, \`America/Bogota\`, \`Europe/Madrid\``, { parse_mode: 'Markdown' });
-    }
-});
-
-// 3. CALCULADORA REAL
-bot.onText(/\/calculadora\s+(.+)/, (msg, match) => {
-    const chatId = msg.chat.id;
-    const expresion = match[1];
-    try {
-        if (!/^[0-9+\-*/().\s]+$/.test(expresion)) {
-            throw new Error('Caracteres inválidos');
-        }
-        // eslint-disable-next-line no-eval
-        const resultado = eval(expresion);
-        bot.sendMessage(chatId, `🧮 **Calculadora**\n\n📥 Operación: \`${expresion}\`\n📤 Resultado: **${resultado}**`, { parse_mode: 'Markdown' });
-    } catch (e) {
-        bot.sendMessage(chatId, `❌ Formato inválido. Ejemplo: \`/calculadora 45*2+10\``, { parse_mode: 'Markdown' });
-    }
-});
-
-// 4. WIKIPEDIA REAL
-bot.onText(/\/wiki\s+(.+)/, async (msg, match) => {
-    const chatId = msg.chat.id;
-    const query = match[1].trim();
-    try {
-        const res = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-        const data = await res.json();
-        if (data.title && data.extract) {
-            bot.sendMessage(chatId, `📚 **Wikipedia: ${data.title}**\n\n${data.extract}\n\n🔗 [Más información](${data.content_urls.desktop.page})`, { parse_mode: 'Markdown' });
-        } else {
-            bot.sendMessage(chatId, `❌ No se encontró ningún resultado en Wikipedia para "${query}".`);
-        }
-    } catch (e) {
-        bot.sendMessage(chatId, `❌ Error al conectar con Wikipedia.`);
+bot.onText(/\/robar/, (msg) => {
+    const user = getUsuario(msg.from.id);
+    const exito = Math.random() < 0.4;
+    if (exito) {
+        const botin = Math.floor(Math.random() * 400) + 100;
+        user.balance += botin;
+        bot.sendMessage(msg.chat.id, `🥷 ¡Robo exitoso! Lograste hurtar **$${botin}** clandestinamente.`);
+    } else {
+        const multa = 200;
+        user.balance = Math.max(0, user.balance - multa);
+        bot.sendMessage(msg.chat.id, `🚨 ¡Te atrapó la policía intentando robar! Pagaste una fianza de **$${multa}**.`);
     }
 });
 
 // ==========================================
 // JUEGOS Y ENTRETENIMIENTO
 // ==========================================
+bot.onText(/\/apostar\s+(\d+)/, (msg, match) => {
+    const chatId = msg.chat.id;
+    const user = getUsuario(msg.from.id);
+    const cantidad = parseInt(match[1]);
+
+    if (cantidad > user.balance) return bot.sendMessage(chatId, `❌ No tienes suficiente efectivo para esa apuesta.`);
+    
+    if (Math.random() < 0.5) {
+        user.balance += cantidad;
+        bot.sendMessage(chatId, `🎲 ¡Has ganado la apuesta y duplicado tu monto! Cartera: $${user.balance}`);
+    } else {
+        user.balance -= cantidad;
+        bot.sendMessage(chatId, `🎲 La suerte no estuvo de tu lado, perdiste la apuesta. Cartera: $${user.balance}`);
+    }
+});
+
 bot.onText(/\/caraocruz\s+(\d+)\s+(cara|cruz)/i, (msg, match) => {
     const chatId = msg.chat.id;
     const user = getUsuario(msg.from.id);
     const apuesta = parseInt(match[1]);
     const eleccion = match[2].toLowerCase();
 
-    if (apuesta > user.balance) {
-        return bot.sendMessage(chatId, `❌ No tienes suficiente dinero. Tu balance actual es $${user.balance}`);
-    }
+    if (apuesta > user.balance) return bot.sendMessage(chatId, `❌ No tienes suficiente dinero.`);
 
     const resultado = Math.random() < 0.5 ? 'cara' : 'cruz';
     if (eleccion === resultado) {
         user.balance += apuesta;
-        bot.sendMessage(chatId, `🪙 Cayó **${resultado.toUpperCase()}**. ¡Ganaste la apuesta! 🎉\n💰 Cartera: $${user.balance}`);
+        bot.sendMessage(chatId, `🪙 Cayó **${resultado.toUpperCase()}**. ¡Ganaste! 💰 Cartera: $${user.balance}`);
     } else {
         user.balance -= apuesta;
-        bot.sendMessage(chatId, `🪙 Cayó **${resultado.toUpperCase()}**. Perdiste la apuesta. 😢\n💰 Cartera: $${user.balance}`);
+        bot.sendMessage(chatId, `🪙 Cayó **${resultado.toUpperCase()}**. Perdiste. 😢 Cartera: $${user.balance}`);
     }
+});
+
+bot.onText(/\/ppt\s+(piedra|papel|tijera)/i, (msg, match) => {
+    const userChoice = match[1].toLowerCase();
+    const opciones = ['piedra', 'papel', 'tijera'];
+    const botChoice = opciones[Math.floor(Math.random() * opciones.length)];
+
+    let resultado = "";
+    if (userChoice === botChoice) {
+        resultado = "🤝 ¡Empate!";
+    } else if (
+        (userChoice === 'piedra' && botChoice === 'tijera') ||
+        (userChoice === 'papel' && botChoice === 'piedra') ||
+        (userChoice === 'tijera' && botChoice === 'papel')
+    ) {
+        resultado = "🎉 ¡Has ganado!";
+    } else {
+        resultado = "😢 ¡Has perdido!";
+    }
+
+    bot.sendMessage(msg.chat.id, `🎮 **PIEDRA, PAPEL O TIJERA**\n\nTu elección: ${userChoice}\nElegí: ${botChoice}\n\n${resultado}`);
 });
 
 bot.onText(/\/chiste/, async (msg) => {
@@ -418,22 +345,154 @@ bot.onText(/\/frase/, (msg) => {
 });
 
 // ==========================================
-// ENLACES
+// COMANDOS DINÁMICOS REALES (Clima, Hora, Calculadora, Wiki)
 // ==========================================
-bot.onText(/\/reglas/, (msg) => bot.sendMessage(msg.chat.id, "📜 **REGLAS OFICIALES**\n\n1. Respeto mutuo.\n2. Cero spam.\n3. Diviértete y usa los comandos."));
+bot.onText(/\/clima(?:\s+(.+))?/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const ciudad = match[1] ? match[1].trim() : 'Mexico';
+    try {
+        const res = await fetch(`https://wttr.in/${encodeURIComponent(ciudad)}?format=j1`);
+        const data = await res.json();
+        const current = data.current_condition[0];
+        const climaTxt = `🌍 **Clima Real en ${ciudad.toUpperCase()}**\n\n🌡️ Temperatura: ${current.temp_C}°C\n☁️ Condición: ${current.weatherDesc[0].value}\n💧 Humedad: ${current.humidity}\%\n💨 Viento: ${current.windspeedKmph} km/h`;
+        bot.sendMessage(chatId, climaTxt, { parse_mode: 'Markdown' });
+    } catch (e) {
+        bot.sendMessage(chatId, `❌ No se pudo obtener el clima para "${ciudad}".`);
+    }
+});
+
+bot.onText(/\/hora(?:\s+(.+))?/, (msg, match) => {
+    const chatId = msg.chat.id;
+    const zona = match[1] ? match[1].trim() : 'America/Mexico_City';
+    try {
+        const horaActual = new Date().toLocaleString('es-ES', { timeZone: zona, dateStyle: 'full', timeStyle: 'medium' });
+        bot.sendMessage(chatId, `⏰ **Hora Oficial Global**\n\n📍 Zona: \`${zona}\`\n🕒 ${horaActual}`, { parse_mode: 'Markdown' });
+    } catch (e) {
+        bot.sendMessage(chatId, `❌ Zona horaria no válida. Ejemplo: \`America/Mexico_City\``);
+    }
+});
+
+bot.onText(/\/calculadora\s+(.+)/, (msg, match) => {
+    const chatId = msg.chat.id;
+    const expresion = match[1];
+    try {
+        if (!/^[0-9+\-*/().\s]+$/.test(expresion)) throw new Error('Caracteres inválidos');
+        // eslint-disable-next-line no-eval
+        const resultado = eval(expresion);
+        bot.sendMessage(chatId, `🧮 **Calculadora**\n\n📥 Operación: \`${expresion}\`\n📤 Resultado: **${resultado}**`, { parse_mode: 'Markdown' });
+    } catch (e) {
+        bot.sendMessage(chatId, `❌ Formato inválido. Ejemplo: \`/calculadora 45*2+10\``);
+    }
+});
+
+bot.onText(/\/wiki\s+(.+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const query = match[1].trim();
+    try {
+        const res = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (data.title && data.extract) {
+            bot.sendMessage(chatId, `📚 **Wikipedia: ${data.title}**\n\n${data.extract}\n\n🔗 [Más información](${data.content_urls.desktop.page})`, { parse_mode: 'Markdown' });
+        } else {
+            bot.sendMessage(chatId, `❌ No se encontró ningún resultado en Wikipedia para "${query}".`);
+        }
+    } catch (e) {
+        bot.sendMessage(chatId, `❌ Error al conectar con Wikipedia.`);
+    }
+});
+
+// ==========================================
+// MÓDULO DE MODERACIÓN, ESTADÍSTICAS Y SEGURIDAD
+// ==========================================
+bot.onText(/\/abrir/, async (msg) => {
+    const chatId = msg.chat.id;
+    try {
+        await bot.setChatPermissions(chatId, { can_send_messages: true, can_send_media_messages: true, can_send_other_messages: true, can_add_web_page_previews: true });
+        getGrupoConfig(chatId).abierto = true;
+        bot.sendMessage(chatId, "🔓 **GRUPO ABIERTO**\n\nTodos los miembros pueden enviar mensajes.");
+    } catch (e) {
+        bot.sendMessage(chatId, "❌ Asegúrate de que el bot sea Administrador con permisos.");
+    }
+});
+
+bot.onText(/\/cerrar/, async (msg) => {
+    const chatId = msg.chat.id;
+    try {
+        await bot.setChatPermissions(chatId, { can_send_messages: false });
+        getGrupoConfig(chatId).abierto = false;
+        bot.sendMessage(chatId, "🔒 **GRUPO CERRADO**\n\nEl chat ha sido bloqueado temporalmente.");
+    } catch (e) {
+        bot.sendMessage(chatId, "❌ Asegúrate de que el bot sea Administrador.");
+    }
+});
+
+bot.onText(/\/antilink\s+(on|off)/i, (msg, match) => {
+    const chatId = msg.chat.id;
+    const estado = match[1].toLowerCase() === 'on';
+    getGrupoConfig(chatId).antilink = estado;
+    bot.sendMessage(chatId, `🛡️ **Filtro Antilink:** ${estado ? '✅ ACTIVADO' : '❌ DESACTIVADO'}`);
+});
+
+bot.onText(/\/nsfw\s+(on|off)/i, (msg, match) => {
+    const chatId = msg.chat.id;
+    const estado = match[1].toLowerCase() === 'on';
+    getGrupoConfig(chatId).nsfw = estado;
+    bot.sendMessage(chatId, `🔞 **Control NSFW:** ${estado ? '✅ ACTIVADO' : '❌ DESACTIVADO'}`);
+});
+
+bot.onText(/\/stats/, (msg) => {
+    const chatId = msg.chat.id;
+    const config = getGrupoConfig(chatId);
+    bot.sendMessage(chatId, `📊 **ESTADÍSTICAS Y CONFIGURACIÓN DEL CHAT**\n\n🔓 Estado del grupo: ${config.abierto ? 'Abierto' : 'Cerrado'}\n🛡️ Antilink: ${config.antilink ? '🟢 Activado' : '🔴 Desactivado'}\n🔞 Control NSFW: ${config.nsfw ? '🟢 Activado' : '🔴 Desactivado'}\n🤖 Bot: 100% Operativo`, { parse_mode: 'Markdown' });
+});
+
+bot.onText(/\/ban/, async (msg) => {
+    const chatId = msg.chat.id;
+    if (msg.reply_to_message) {
+        try {
+            await bot.banChatMember(chatId, msg.reply_to_message.from.id);
+            bot.sendMessage(chatId, `🔨 Usuario expulsado con éxito.`);
+        } catch (e) {
+            bot.sendMessage(chatId, `❌ No se pudo banear. Verifica permisos de administrador.`);
+        }
+    } else {
+        bot.sendMessage(chatId, `⚠️️ Responde al mensaje del usuario que deseas expulsar con \`/ban\`.`);
+    }
+});
+
+// Filtro automático antilink operativo
+bot.on('message', (msg) => {
+    if (!msg.text) return;
+    const chatId = msg.chat.id;
+    const config = gruposConfig[chatId];
+    if (config && config.antilink) {
+        const regexLink = /(https?:\/\/[^\s]+|t\.me\/[^\s]+|www\.[^\s]+)/i;
+        if (regexLink.test(msg.text)) {
+            bot.deleteMessage(chatId, msg.message_id).catch(() => {});
+            bot.sendMessage(chatId, `⚠️ Enlace eliminado automáticamente por seguridad (Antilink activo).`).then(sent => {
+                setTimeout(() => bot.deleteMessage(chatId, sent.message_id).catch(() => {}), 4000);
+            });
+        }
+    }
+});
+
+// ==========================================
+// ENLACES OFICIALES
+// ==========================================
+bot.onText(/\/reglas/, (msg) => bot.sendMessage(msg.chat.id, "📜 **REGLAS OFICIALES**\n\n1. Respeto mutuo.\n2. Cero spam.\n3. Diviértete."));
 bot.onText(/\/web_oficial/, (msg) => bot.sendMessage(msg.chat.id, "🌐 Visita nuestra web oficial: https://carrd.co"));
 bot.onText(/\/cuenta_tiktok/, (msg) => bot.sendMessage(msg.chat.id, "📱 TikTok oficial del proyecto."));
 bot.onText(/\/community_whatsapp/, (msg) => bot.sendMessage(msg.chat.id, "💬 Canal y comunidad oficial de WhatsApp."));
 
 // ==========================================
-// SERVIDOR HTTP PARA RENDER
+// SERVIDOR WEB HTTP (Para mantener activo el puerto en Render)
 // ==========================================
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('SPYCT.BOT está en línea y funcionando correctamente.\n');
+    res.end('SPYCT.BOT operativo.\n');
 });
 
 server.listen(PORT, () => {
-    console.log(`Servidor web escuchando en el puerto ${PORT}`);
+    console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
