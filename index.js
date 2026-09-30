@@ -281,3 +281,17 @@ bot.onText(/\/menu_completo/, (msg) => {
     const username = msg.from.username || msg.from.first_name;
     bot.sendMessage(chatId, menus.menu_completo(username));
 });
+// ==========================================
+// SERVIDOR HTTP PARA RENDER (Mantiene el puerto abierto y gratis)
+// ==========================================
+const http = require('http');
+const PORT = process.env.PORT || 3000;
+
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('SPYCT.BOT está en línea y funcionando correctamente.\n');
+});
+
+server.listen(PORT, () => {
+    console.log(`Servidor web escuchando en el puerto ${PORT}`);
+});
