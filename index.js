@@ -131,7 +131,7 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄
 
 ─────────────────────┘
 
-〓©꯭          𝗠ꄲ𝖣𝗘Я𝖠匚꒐ӨΝ
+〓©꯭          𝗠ꄲ𝣣𝗘Я𝖠匚꒐ӨΝ
 
 /ban @user
 /unban @user
@@ -320,7 +320,7 @@ bot.onText(/\/minar/, (msg) => {
 
 bot.onText(/\/perfil/, (msg) => {
     const u = getUsuario(msg.from.id);
-    bot.sendMessage(msg.chat.id, `👤 **PERFIL**\n📌 Nombre: ${msg.from.first_name}\n🏷️ Título: ${u.titulo}\n📝 Descripción: ${u.desc}\n⚧️ Género: ${u.genero}\n🏳️️‍🌈 Orientación: ${u.orientacion}\n🌍 País: ${u.pais}\n💬 Pronombres: ${u.pronombres}\n🎂 Cumpleaños: ${u.cumple}\n⭐ Nivel: ${u.nivel} (${u.exp}/100 XP)`);
+    bot.sendMessage(msg.chat.id, `👤 **PERFIL**\n📌 Nombre: ${msg.from.first_name}\n🏷️ Título: ${u.titulo}\n📝 Descripción: ${u.desc}\n⚧️ Género: ${u.genero}\n🏳‍🌈 Orientación: ${u.orientacion}\n🌍 País: ${u.pais}\n💬 Pronombres: ${u.pronombres}\n🎂 Cumpleaños: ${u.cumple}\n⭐ Nivel: ${u.nivel} (${u.exp}/100 XP)`);
 });
 bot.onText(/\/desc\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).desc = match[1]; bot.sendMessage(msg.chat.id, "✅ Descripción actualizada."); });
 bot.onText(/\/perfilgenero\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).genero = match[1]; bot.sendMessage(msg.chat.id, "✅ Género actualizado."); });
@@ -682,12 +682,13 @@ bot.on('callback_query', async (callbackQuery) => {
 
         const currentId = msg.message_id;
         try {
-            for (let i = 0; i < 30; i++) {
+            // Limpia hasta 60 mensajes recientes hacia atrás
+            for (let i = 0; i < 60; i++) {
                 const targetId = currentId - i;
                 await bot.deleteMessage(msg.chat.id, targetId).catch(() => {});
             }
             bot.answerCallbackQuery(callbackQuery.id, { text: "✅ ¡Chat vaciado con éxito!" });
-            bot.editMessageText("🔄 **Chat reseteado.** Se limpiaron los registros recientes.", {
+            bot.editMessageText("🔄 **Chat reseteado.** Se limpiaron los registros recientes del búfer.", {
                 chat_id: msg.chat.id,
                 message_id: msg.message_id,
                 parse_mode: 'Markdown'
