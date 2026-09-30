@@ -1,14 +1,19 @@
 const TelegramBot = require('node-telegram-bot-api');
 const http = require('http');
 
-// Usa la variable de entorno de Render o pon tu token directo aquí si prefieres pruebas locales
-const token = process.env.TELEGRAM_TOKEN || '8550303174:AAGJtPRhbPtIuIM5fbR7W5tjPg7H9UilHYY';
+// Token seguro desde las variables de entorno de Render
+const token = process.env.TELEGRAM_TOKEN;
+if (!token) {
+    console.error("❌ ERROR: No se encontró la variable TELEGRAM_TOKEN en el sistema.");
+    process.exit(1);
+}
+
 const bot = new TelegramBot(token, { polling: true });
 
 console.log("SPYCT.BOT está encendido y listo en el sistema...");
 
 // ==========================================
-// DICCIONARIO DE MENÚS (Puedes editar los textos aquí libremente)
+// DICCIONARIO DE MENÚS 
 // ==========================================
 
 const menus = {
@@ -284,7 +289,7 @@ bot.onText(/\/menu_completo/, (msg) => {
 });
 
 // ==========================================
-// SERVIDOR HTTP PARA RENDER (Mantiene el puerto abierto y gratis)
+// SERVIDOR HTTP PARA RENDER (Abre el puerto web)
 // ==========================================
 const PORT = process.env.PORT || 3000;
 
