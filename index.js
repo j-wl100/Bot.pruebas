@@ -14,9 +14,7 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 // 2. Token de BotFather (Asegúrate de pegar tu token real aquí)
-const bot = new Telegraf('8766864367:AAF6wHe3oznvIZM6A7s
-
-HjFGy7LB4zZhCQO0');
+const bot = new Telegraf('8871233471:AAGwFEoIlKxg5IaHemqc0x2xLEJWsR63_cc');
 
 // Bases de datos en memoria
 const usuariosDB = {};
