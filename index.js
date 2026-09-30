@@ -61,7 +61,7 @@ async function verificarPermisosAdmin(chatId, userId) {
 // ==========================================
 const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
       
-%＿＿         𝗕𝖨𝖾𝗇𝗏𝖾𝗇𝗂𝖽x       #!?    𝖠𝗅 𝗺𝗲𝗻𝘂 𝖼𝗈𝗆𝗉𝗅𝖾𝗍𝗈   
+%＿＿         𝗕𝖨𝖾𝗇𝗏𝖾𝗇𝗂𝖽x       #!?    𝖠𝗅 𝗺𝗲𝗻𝘂 𝖼𝗈𝗺𝗽𝗹𝗲𝘁𝗼   
 
 !▛      solicitado por @${user}          𔖢𔖢
 
@@ -80,7 +80,7 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄
 /invertir
 /minar
 
-〓©꯭          𝗣𝖤ꋪ𝖥𝖨L‌  
+〓©꯭          𝗣𝤤ꋪ𝖥𝖨L‌  
 
 /perfil [@user]
 /desc [texto]
@@ -320,7 +320,7 @@ bot.onText(/\/minar/, (msg) => {
 
 bot.onText(/\/perfil/, (msg) => {
     const u = getUsuario(msg.from.id);
-    bot.sendMessage(msg.chat.id, `👤 **PERFIL**\n📌 Nombre: ${msg.from.first_name}\n🏷️ Título: ${u.titulo}\n📝 Descripción: ${u.desc}\n⚧️ Género: ${u.genero}\n🏳️‍🌈 Orientación: ${u.orientacion}\n🌍 País: ${u.pais}\n💬 Pronombres: ${u.pronombres}\n🎂 Cumpleaños: ${u.cumple}\n⭐ Nivel: ${u.nivel} (${u.exp}/100 XP)`);
+    bot.sendMessage(msg.chat.id, `👤 **PERFIL**\n📌 Nombre: ${msg.from.first_name}\n🏷️ Título: ${u.titulo}\n📝 Descripción: ${u.desc}\n⚧️ Género: ${u.genero}\n🏳️️‍🌈 Orientación: ${u.orientacion}\n🌍 País: ${u.pais}\n💬 Pronombres: ${u.pronombres}\n🎂 Cumpleaños: ${u.cumple}\n⭐ Nivel: ${u.nivel} (${u.exp}/100 XP)`);
 });
 bot.onText(/\/desc\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).desc = match[1]; bot.sendMessage(msg.chat.id, "✅ Descripción actualizada."); });
 bot.onText(/\/perfilgenero\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).genero = match[1]; bot.sendMessage(msg.chat.id, "✅ Género actualizado."); });
@@ -550,7 +550,7 @@ bot.onText(/\/warn(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     if (!cfg.warnsUsuarios[userId]) cfg.warnsUsuarios[userId] = 0;
     cfg.warnsUsuarios[userId]++;
 
-    bot.sendMessage(msg.chat.id, `⚠️️ Advertencia (${cfg.warnsUsuarios[userId]}/3) aplicada a @${msg.reply_to_message.from.username || msg.reply_to_message.from.first_name}.\n📝 Razón: ${razón}`);
+    bot.sendMessage(msg.chat.id, `⚠ Advertencia (${cfg.warnsUsuarios[userId]}/3) aplicada a @${msg.reply_to_message.from.username || msg.reply_to_message.from.first_name}.\n📝 Razón: ${razón}`);
 
     if (cfg.warnsUsuarios[userId] >= 3) {
         try {
@@ -651,22 +651,50 @@ bot.onText(/\/antilinkoff/i, async (msg) => {
     bot.sendMessage(msg.chat.id, "🔗 Antilink desactivado.");
 });
 
-// /chatreset (Borra mensajes recientes reales de forma iterativa)
+// /chatreset (Envía el botón interactivo con el texto requerido)
 bot.onText(/\/chatreset/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
     
-    const currentId = msg.message_id;
-    let borrados = 0;
-    try {
-        for (let i = 0; i < 30; i++) {
-            const targetId = currentId - i;
-            await bot.deleteMessage(msg.chat.id, targetId).catch(() => {});
-            borrados++;
+    bot.sendMessage(msg.chat.id, "🧹 **Panel de Limpieza de Chat**\nHaz clic en el botón de abajo para vaciar los registros recientes del búfer.", {
+        parse_mode: 'Markdown',
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '🗑️ Vaciar chat para todos', callback_data: 'ejecutar_chatreset' }]
+            ]
         }
-        bot.sendMessage(msg.chat.id, `🔄 Chat reseteado. Se limpiaron los registros recientes del búfer.`);
-    } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error al limpiar mensajes masivos.");
+    });
+});
+
+// Manejador del botón interactivo para el reseteo
+bot.on('callback_query', async (callbackQuery) => {
+    const msg = callbackQuery.message;
+    const data = callbackQuery.data;
+
+    if (data === 'ejecutar_chatreset') {
+        const esAdmin = await verificarPermisosAdmin(msg.chat.id, callbackQuery.from.id);
+        if (!esAdmin) {
+            return bot.answerCallbackQuery(callbackQuery.id, { 
+                text: "❌ Solo los administradores pueden usar este botón.", 
+                show_alert: true 
+            });
+        }
+
+        const currentId = msg.message_id;
+        try {
+            for (let i = 0; i < 30; i++) {
+                const targetId = currentId - i;
+                await bot.deleteMessage(msg.chat.id, targetId).catch(() => {});
+            }
+            bot.answerCallbackQuery(callbackQuery.id, { text: "✅ ¡Chat vaciado con éxito!" });
+            bot.editMessageText("🔄 **Chat reseteado.** Se limpiaron los registros recientes.", {
+                chat_id: msg.chat.id,
+                message_id: msg.message_id,
+                parse_mode: 'Markdown'
+            });
+        } catch {
+            bot.answerCallbackQuery(callbackQuery.id, { text: "❌ Error al limpiar los mensajes.", show_alert: true });
+        }
     }
 });
 
@@ -754,7 +782,7 @@ bot.onText(/\/ping/, async (msg) => {
     const sent = await bot.sendMessage(msg.chat.id, "🏓 Calculando latencia real...");
     const fin = Date.now();
     const latenciaBot = fin - inicio;
-    bot.editMessageText(`🏓 **¡Pong Real!**\n⏱️️ Latencia: **${latenciaBot} ms**\n🌐 Servidores: **100% Operativos**`, {
+    bot.editMessageText(`🏓 **¡Pong Real!**\n⏱ Latencia: **${latenciaBot} ms**\n🌐 Servidores: **100% Operativos**`, {
         chat_id: msg.chat.id,
         message_id: sent.message_id,
         parse_mode: 'Markdown'
@@ -789,7 +817,6 @@ bot.on('message', async (msg) => {
     if (cfg.antilink) {
         const regexLinks = /(https?:\/\/[^\s]+|t\.me\/[^\s]+|www\.[^\s]+)/i;
         if (regexLinks.test(msg.text)) {
-            // Permitir dominios oficiales reconocidos (ej. youtube, tiktok, google, carrd, whatsapp)
             const dominiosOficiales = /(youtube\.com|youtu\.be|tiktok\.com|whatsapp\.com|wa\.me|carrd\.co|google\.com)/i;
             if (!dominiosOficiales.test(msg.text)) {
                 await bot.deleteMessage(chatId, msg.message_id).catch(() => {});
@@ -810,18 +837,16 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // 3. Antispam (3 mensajes seguidos = advertencia | 10 mensajes en segundos = eliminación)
+    // 3. Antispam
     if (cfg.antispam) {
         const ahora = Date.now();
         if (!controlSpam[chatId]) controlSpam[chatId] = {};
         if (!controlSpam[chatId][userId]) controlSpam[chatId][userId] = [];
 
         controlSpam[chatId][userId].push(ahora);
-        // Filtrar marcas de tiempo del último segundo (para spam masivo)
         controlSpam[chatId][userId] = controlSpam[chatId][userId].filter(t => ahora - t < 2000);
 
         if (controlSpam[chatId][userId].length >= 10) {
-            // Spam masivo: eliminar mensaje y banear temporalmente / silenciar
             await bot.deleteMessage(chatId, msg.message_id).catch(() => {});
             try {
                 await bot.restrictChatMember(chatId, userId, {
