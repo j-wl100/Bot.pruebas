@@ -1,7 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 
 // Usa la variable de entorno de Render o pon tu token directo aquí si prefieres pruebas locales
-const token = process.env.TELEGRAM_TOKEN || 'TU_TOKEN_DE_BOTFATHER_AQUI';
+const token = process.env.TELEGRAM_TOKEN || '8550303174:AAGJtPRhbPtIuIM5fbR7W5tjPg7H9UilHYY';
 const bot = new TelegramBot(token, { polling: true });
 
 console.log("🔥 SPYCT.BOT está encendido y listo en el sistema...");
