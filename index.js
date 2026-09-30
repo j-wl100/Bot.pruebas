@@ -1,19 +1,19 @@
 const { Telegraf } = require('telegraf');
 const express = require('express');
 
-// 1. Configuración robusta del Servidor Express para Render
+// 1. Configuración del Servidor Web para mantener el bot activo en la nube
 const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-    res.send('⟨ ☩ ⟩ ZENITH // Connor OS Core - Active and Running.');
+    res.send('⟨ ☩ ⟩ SERVIDOR MULTIFUNCIÓN // Bot Core - Activo y Operativo.');
 });
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`[SYS_WEB] Servidor HTTP escuchando en el puerto ${PORT}`);
 });
 
-// 2. Token de BotFather (Asegúrate de pegar tu token real aquí)
+// 2. Token del Bot (Reemplaza con tu nuevo token de BotFather)
 const bot = new Telegraf('8871233471:AAGwFEoIlKxg5IaHemqc0x2xLEJWsR63_cc');
 
 // Bases de datos en memoria
@@ -31,15 +31,14 @@ function obtenerPerfil(ctx) {
         usuariosDB[userId] = {
             nombre: nombre,
             creditos: 100,
-            clearanceLevel: 1,
-            experiencia: 0
+            nivel: 1
         };
     }
     return usuariosDB[userId];
 }
 
 // ==========================================
-// 🛡️ NÚCLEO DE PROTECCIÓN BÁSICA
+// 🛡️ NÚCLEO DE PROTECCIÓN Y MODERACIÓN
 // ==========================================
 bot.on('message', async (ctx, next) => {
     if (!ctx.chat || ctx.chat.type === 'private') return next();
@@ -58,7 +57,7 @@ bot.on('message', async (ctx, next) => {
             if (!advertenciasDB[userId]) advertenciasDB[userId] = 0;
             advertenciasDB[userId] += 1;
             
-            ctx.reply(`[SYS_ALERT] Contenido prohibido detectado de ${ctx.from.first_name}. Advertencia [${advertenciasDB[userId]}/3].`);
+            ctx.reply(`⚠️️ Contenido prohibido detectado de ${ctx.from.first_name}. Advertencia [${advertenciasDB[userId]}/3].`);
             return;
         }
 
@@ -71,136 +70,190 @@ bot.on('message', async (ctx, next) => {
 
         if (antispamDB[userId].timestamps.length >= 5) {
             await ctx.deleteMessage().catch(() => {});
-            ctx.reply(`[SYS_SECURITY_PURGE] Actividad de flood detectada de ${ctx.from.first_name}. Mensaje eliminado.`);
+            ctx.reply(`🚨 Actividad de flood detectada de ${ctx.from.first_name}. Mensaje purgado.`);
             return;
         }
 
     } catch (e) {
-        console.error('[ERROR_CRITICAL_SECURITY]', e);
+        console.error('[ERROR_SECURITY]', e);
     }
 
     return next();
 });
 
 // ==========================================
-// ⚡ COMANDOS (CONNOR OS)
+// ⚡ MENÚ Y COMANDOS GENERALES
 // ==========================================
 
 bot.start((ctx) => {
-    ctx.reply('⟨ ☩ ⟩ ZENITH // CONNOR OS v5.0\n' +
-              '──────────────────────────────\n' +
-              'ESTADO: Red central activa y enlazada.\n' +
-              'DIRECTORIO: Ejecute /menu para acceder.');
+    ctx.reply('🤖 **BOT MULTIFUNCIÓN ACTIVO**\n\n' +
+              'Escribe /menu para desplegar el directorio completo de comandos disponibles.');
 });
 
 bot.command('menu', (ctx) => {
-    ctx.reply('⟨ ☩ ⟩ ZENITH // PANEL DE CONTROL PRINCIPAL\n' +
+    ctx.reply('📂 **DIRECTORIO DE COMANDOS**\n' +
               '──────────────────────────────\n' +
-              ' [PERFIL Y DATOS]\n' +
-              ' /perfil - Consulta de estatus y créditos\n' +
-              ' /sincronizar - Reclamación de asignación diaria\n' +
-              ' /asignar [monto] - Protocolo de transferencia de riesgo\n\n' +
-              ' [COMANDOS CREATIVOS]\n' +
-              ' /ciberclima [ciudad] - Diagnóstico meteorológico avanzado\n' +
-              ' /escanear [objetivo] - Análisis biométrico simulado\n' +
-              ' /frecuencia - Generador de ondas virtuales\n' +
-              ' /analizar [término] - Búsqueda en base de datos\n' +
-              ' /sistema - Métricas del servidor\n\n' +
-              ' [SEGURIDAD Y ADMIN]\n' +
-              ' /modo_admin - Panel de control de privilegios\n' +
-              ' /bloquear y /desbloquear - Control de canal');
+              '🛡️ **Seguridad:** /cerrar, /abrir, /advertir, /mutesec\n' +
+              '🎵 **Multimedia:** /music [canción], /letra, /pelicula\n' +
+              '🎮 **Entretenimiento:** /apostar, /trivia, /chiste, /oraculo\n' +
+              '🛠️ **Utilidades:** /clima, /traducir, /qr, /calcular\n' +
+              '👤 **Perfil:** /perfil, /diario, /transferir, /top');
 });
 
-bot.command('perfil', (ctx) => {
-    const p = obtenerPerfil(ctx);
-    ctx.reply(`⟨ ☩ ⟩ REPORTE DE IDENTIDAD\nSUJET: ${p.nombre}\nCLEARANCE: Nivel ${p.clearanceLevel}\nCREDITS: ${p.creditos} Z-C`);
+// ==========================================
+// 🛡️ 1. SEGURIDAD Y MODERACIÓN
+// ==========================================
+
+bot.command('cerrar', async (ctx) => {
+    if (ctx.chat.type === 'private') return ctx.reply('❌ Este comando solo funciona en grupos.');
+    try {
+        await ctx.telegram.setChatPermissions(ctx.chat.id, { can_send_messages: false });
+        ctx.reply('🔒 Chat cerrado administrativamente. Nadie puede enviar mensajes.');
+    } catch (e) {
+        ctx.reply('❌ Error: El bot necesita permisos de administrador para cerrar el chat.');
+    }
 });
 
-bot.command('sincronizar', (ctx) => {
-    const p = obtenerPerfil(ctx);
-    p.creditos += 75;
-    ctx.reply(`⟨ ☩ ⟩ SINCRONIZACIÓN EXITOSA\nAsignación procesada: +75 Z-C.\nBalance: ${p.creditos} Z-C.`);
+bot.command('abrir', async (ctx) => {
+    if (ctx.chat.type === 'private') return ctx.reply('❌ Este comando solo funciona en grupos.');
+    try {
+        await ctx.telegram.setChatPermissions(ctx.chat.id, { 
+            can_send_messages: true, 
+            can_send_media_messages: true, 
+            can_send_other_messages: true 
+        });
+        ctx.reply('🔓 Chat abierto. Los permisos han sido restaurados.');
+    } catch (e) {
+        ctx.reply('❌ Error: El bot necesita permisos de administrador.');
+    }
 });
 
-bot.command('asignar', (ctx) => {
+// ==========================================
+// 🎵 2. MULTIMEDIA Y MÚSICA
+// ==========================================
+
+bot.command('music', async (ctx) => {
+    const query = ctx.message.text.replace('/music', '').trim();
+    if (!query) return ctx.reply('🎵 Uso correcto: /music [nombre de la canción] - [artista]');
+
+    const cargando = await ctx.reply(`🔍 Buscando "${query}"...`);
+
+    try {
+        const searchQuery = encodeURIComponent(query + " audio oficial");
+        const musicUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
+
+        await ctx.telegram.deleteMessage(ctx.chat.id, cargando.message_id).catch(() => {});
+
+        await ctx.reply(`🎶 **RESULTADO MUSICAL**\n\n` +
+                        `🔎 Pista: \`${query}\`\n\n` +
+                        `Toca el botón para escuchar la canción:`, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: '🎧 Escuchar en YouTube / YouTube Music', url: musicUrl }]
+                ]
+            }
+        });
+    } catch (error) {
+        ctx.reply('❌ Error al procesar la búsqueda de música.');
+    }
+});
+
+bot.command('pelicula', async (ctx) => {
+    const q = ctx.message.text.replace('/pelicula', '').trim();
+    if (!q) return ctx.reply('🎬 Uso correcto: /pelicula [nombre]');
+    ctx.reply(`🍿 **Búsqueda de Cine:** ${q}\n🔗 https://www.google.com/search?q=pelicula+${encodeURIComponent(q)}`, { parse_mode: 'Markdown' });
+});
+
+// ==========================================
+// 🎮 3. ENTRETENIMIENTO Y MINIJUEGOS
+// ==========================================
+
+bot.command('apostar', (ctx) => {
     const p = obtenerPerfil(ctx);
     const args = ctx.message.text.split(' ');
     const monto = parseInt(args[1]);
 
-    if (isNaN(monto) || monto <= 0) return ctx.reply('[SYS_SYNTAX] Uso: /asignar [monto]');
-    if (p.creditos < monto) return ctx.reply(`[SYS_DENIED] Fondos insuficientes. Tienes ${p.creditos} Z-C.`);
+    if (isNaN(monto) || monto <= 0) return ctx.reply('🎲 Uso: /apostar [cantidad]');
+    if (p.creditos < monto) return ctx.reply(`❌ Fondos insuficientes. Tienes ${p.creditos} créditos.`);
 
-    if (Math.random() < 0.48) {
+    if (Math.random() < 0.5) {
         p.creditos += monto;
-        ctx.reply(`[SYS_SUCCESS] Operación POSITIVA (+${monto} Z-C)\nBalance: ${p.creditos} Z-C`);
+        ctx.reply(`🎉 ¡Ganaste la apuesta! +${monto} créditos.\n💰 Balance: ${p.creditos}`);
     } else {
         p.creditos -= monto;
-        ctx.reply(`[SYS_FAILED] Operación NEGATIVA (-${monto} Z-C)\nBalance: ${p.creditos} Z-C`);
+        ctx.reply(`💀 Perdiste la apuesta. -${monto} créditos.\n💰 Balance: ${p.creditos}`);
     }
 });
 
-bot.command('ciberclima', async (ctx) => {
-    const ciudad = ctx.message.text.replace('/ciberclima', '').trim();
-    if (!ciudad) return ctx.reply('[SYS_ERROR] Sintaxis: /ciberclima [ciudad]');
+bot.command('chiste', (ctx) => {
+    const chistes = [
+        Mi amor, ¿qué tal me queda este vestido? - ¡Pareces una diosa! - ¿Ah, sí? ¿De qué mitología? Del caos.`,
+        '— Papá, papá, ¿qué se siente tener un hijo tan guapo? — No lo sé, hijo, pregúntale a tu abuelo.',
+        '— Camarero, hay una mosca en mi sopa. — No se preocupe, el murciélago que pidió la cazuela se la comerá luego.'
+    ];
+    ctx.reply(chistes[Math.floor(Math.random() * chistes.length)]);
+});
+
+bot.command('oraculo', (ctx) => {
+    const q = ctx.message.text.replace('/oraculo', '').trim();
+    if (!q) return ctx.reply('🔮 Pregúntale algo al oráculo: /oraculo [pregunta]');
+    const respuestas = ['Es altamente probable.', 'Ni lo sueñes.', 'Las señales apuntan a que sí.', 'Jamás sucederá.', 'Prueba a consultarlo más tarde.'];
+    ctx.reply(`🔮 **Oráculo:** ${respuestas[Math.floor(Math.random() * respuestas.length)]}`);
+});
+
+// ==========================================
+// 🛠️ 4. UTILIDADES Y HERRAMIENTAS
+// ==========================================
+
+bot.command('clima', async (ctx) => {
+    const ciudad = ctx.message.text.replace('/clima', '').trim();
+    if (!ciudad) return ctx.reply('🌤️ Uso: /clima [ciudad]');
     try {
         const res = await fetch(`https://wttr.in/${encodeURIComponent(ciudad)}?format=3&lang=es`);
         const text = await res.text();
-        ctx.reply(`⟨ ☩ ⟩ METEOROLOGÍA SECTOR: ${ciudad.toUpperCase()}\n${text}`);
+        ctx.reply(`🌤️ **Clima para ${ciudad.toUpperCase()}:**\n${text}`);
     } catch (e) {
-        ctx.reply('[SYS_ERROR] Fallo con los satélites meteorológicos.');
+        ctx.reply('❌ No se pudo obtener el reporte meteorológico.');
     }
 });
 
-bot.command('escanear', (ctx) => {
-    const obj = ctx.message.reply_to_message ? ctx.message.reply_to_message.from.first_name : ctx.from.first_name;
-    const estres = Math.floor(Math.random() * 100);
-    const sinceridad = Math.floor(Math.random() * 100);
-    ctx.reply(`⟨ ☩ ⟩ ESCANEO BIOMÉTRICO\nSUJET: ${obj}\nESTRÉS TÉRMICO: ${estres}%\nVERACIDAD: ${sinceridad}%`);
-});
-
-bot.command('frecuencia', (ctx) => {
-    const freqs = ['432 Hz [Harmonic Resonance]', '528 Hz [DNA Repair]', '963 Hz [Pineal Activation]', '174 Hz [Noise Reduction]'];
-    ctx.reply(`⟨ ☩ ⟩ FRECUENCIA ACTIVA: ${freqs[Math.floor(Math.random() * freqs.length)]}`);
-});
-
-bot.command('analizar', (ctx) => {
-    const q = ctx.message.text.replace('/analizar', '').trim();
-    if (!q) return ctx.reply('[SYS_ERROR] Sintaxis: /analizar [término]');
-    ctx.reply(`⟨ ☩ ⟩ RED: ${q}\n🔗 https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, { parse_mode: 'Markdown' });
-});
-
-bot.command('sistema', (ctx) => {
-    ctx.reply(`⟨ ☩ ⟩ NÚCLEO RENDER\nUPTIME: ${Math.floor(process.uptime())}s\nMEMORY: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`);
-});
-
-bot.command('modo_admin', async (ctx) => {
-    if (ctx.chat.type === 'private') return ctx.reply('[SYS_ERROR] Solo en grupos.');
-    ctx.reply(`⟨ ☩ ⟩ PANEL ADMIN\nESTADO: Operativo\nFiltro Antispam: Activo.`);
-});
-
-bot.command('bloquear', async (ctx) => {
-    if (ctx.chat.type === 'private') return ctx.reply('[SYS_ERROR] Solo en grupos.');
+bot.command('calcular', (ctx) => {
+    const expr = ctx.message.text.replace('/calcular', '').trim();
+    if (!expr) return ctx.reply('🔢 Uso: /calcular [operación matemática, ej: 5*5+2]');
     try {
-        await ctx.telegram.setChatPermissions(ctx.chat.id, { can_send_messages: false });
-        ctx.reply('⟨ ☩ ⟩ Canal bloqueado administrativamente.');
+        // Usamos eval de forma segura limitada a números
+        const resultado = eval(expr.replace(/[^0-9+\-*/().]/g, ''));
+        ctx.reply(`🔢 Resultado: ${resultado}`);
     } catch (e) {
-        ctx.reply('[SYS_DENIED] Permisos insuficientes.');
+        ctx.reply('❌ Operación inválida.');
     }
 });
 
-bot.command('desbloquear', async (ctx) => {
-    if (ctx.chat.type === 'private') return ctx.reply('[SYS_ERROR] Solo en grupos.');
-    try {
-        await ctx.telegram.setChatPermissions(ctx.chat.id, { can_send_messages: true, can_send_media_messages: true, can_send_other_messages: true });
-        ctx.reply('⟨ ☩ ⟩ Canal desbloqueado.');
-    } catch (e) {
-        ctx.reply('[SYS_DENIED] Permisos insuficientes.');
-    }
+// ==========================================
+//  5. PERFILES Y ECONOMÍA
+// ==========================================
+
+bot.command('perfil', (ctx) => {
+    const p = obtenerPerfil(ctx);
+    ctx.reply(` **PERFIL DE USUARIO**\n` +
+              `• Nombre: ${p.nombre}\n` +
+              `• Nivel: ${p.nivel}\n` +
+              `• Créditos: ${p.creditos} 🪙`);
 });
 
-// Inicialización segura del bot con manejo de errores
+bot.command('diario', (ctx) => {
+    const p = obtenerPerfil(ctx);
+    p.creditos += 50;
+    ctx.reply(`¡Has reclamado tu bonificación diaria!\n💰 Has ganado +50 créditos. Balance actual: ${p.creditos} 🪙`);
+});
+
+// ==========================================
+// 🚀 INICIALIZACIÓN
+// ==========================================
+
 bot.launch().then(() => {
-    console.log('[SYS_BOOT] Connor OS v5.0 inicializado con éxito en Render.');
+    console.log('[SYS_BOOT] Bot multifunción inicializado correctamente.');
 }).catch((err) => {
     console.error('[ERROR_LAUNCH]', err);
 });
