@@ -11,9 +11,11 @@ const bot = new TelegramBot(token, { polling: true });
 
 console.log("SPYCT.BOT está encendido y listo en el sistema...");
 
-// Base de datos en memoria
+// Bases de datos en memoria
 const usuariosData = {};
 const gruposConfig = {};
+const controlSpam = {}; // { chatId: { userId: [timestamps] } }
+const estadisticasChat = {}; // { chatId: { totalMensajes: 0, usuarios: { userId: { nombre, contador } } } }
 
 function getUsuario(userId) {
     if (!usuariosData[userId]) {
@@ -33,7 +35,7 @@ function getGrupoConfig(chatId) {
             antilink: false, 
             antinsfw: false, 
             antispam: false, 
-            abierto: true, 
+            onlyadmin: false,
             modeverificaty: false,
             adminsCustom: new Set(),
             warnsUsuarios: {}
@@ -42,7 +44,6 @@ function getGrupoConfig(chatId) {
     return gruposConfig[chatId];
 }
 
-// Función auxiliar para verificar si un usuario es administrador del chat o custom
 async function verificarPermisosAdmin(chatId, userId) {
     try {
         const admins = await bot.getChatAdministrators(chatId);
@@ -143,15 +144,14 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄
 /cerrar
 /abrir
 /antispam 
-/antispam off
-/antinsfw on
-/antinsfw off
-/antilink on
-/antilink off
+/antispamoff
+/antinsfwon
+/antinsfwoff
+/antilinkon
+/antilinkoff
 /chatreset
 /modeverificaty
 /stats
-/actividad
 /config 
 /deladmin @user
 /addadmin @user
@@ -159,7 +159,7 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄
 /ping`;
 
 // ==========================================
-// BANCO DE TRABAJOS (4 variantes exactas por cada uno)
+// BANCO DE TRABAJOS
 // ==========================================
 const trabajosData = {
     uber: [
@@ -225,15 +225,12 @@ const trabajosData = {
 };
 
 // ==========================================
-// COMANDO /MENU PRINCIPAL
+// COMANDOS GENERALES, ECONOMÍA, PERFIL, GAMES, RANDOM Y ENLACES
 // ==========================================
 bot.onText(/\/menu(?!\S)/, (msg) => {
     bot.sendMessage(msg.chat.id, menuCompleto(msg.from.username || msg.from.first_name));
 });
 
-// ==========================================
-// SECCIÓN: ECONOMÍA
-// ==========================================
 bot.onText(/\/apostar\s+(\d+)/, (msg, match) => {
     const user = getUsuario(msg.from.id);
     const cant = parseInt(match[1]);
@@ -307,7 +304,7 @@ bot.onText(/\/top/, (msg) => bot.sendMessage(msg.chat.id, "🏆 **TOP GLOBAL**\n
 bot.onText(/\/loteria/, (msg) => {
     const u = getUsuario(msg.from.id);
     u.balance += 500;
-    bot.sendMessage(msg.chat.id, `🎟️️ ¡Compraste un boleto de lotería y ganaste **$500**!`);
+    bot.sendMessage(msg.chat.id, `🎟 ¡Compraste un boleto de lotería y ganaste **$500**!`);
 });
 bot.onText(/\/crimen/, (msg) => {
     const u = getUsuario(msg.from.id);
@@ -321,9 +318,6 @@ bot.onText(/\/minar/, (msg) => {
     bot.sendMessage(msg.chat.id, `⛏️ Minaste criptomonedas con éxito. Ganaste **$300**.`);
 });
 
-// ==========================================
-// SECCIÓN: PERFIL
-// ==========================================
 bot.onText(/\/perfil/, (msg) => {
     const u = getUsuario(msg.from.id);
     bot.sendMessage(msg.chat.id, `👤 **PERFIL**\n📌 Nombre: ${msg.from.first_name}\n🏷️ Título: ${u.titulo}\n📝 Descripción: ${u.desc}\n⚧️ Género: ${u.genero}\n🏳️‍🌈 Orientación: ${u.orientacion}\n🌍 País: ${u.pais}\n💬 Pronombres: ${u.pronombres}\n🎂 Cumpleaños: ${u.cumple}\n⭐ Nivel: ${u.nivel} (${u.exp}/100 XP)`);
@@ -339,9 +333,6 @@ bot.onText(/\/nivel/, (msg) => bot.sendMessage(msg.chat.id, `⭐ Tu nivel es **$
 bot.onText(/\/inventario/, (msg) => bot.sendMessage(msg.chat.id, `🎒 **INVENTARIO**\n- ` + getUsuario(msg.from.id).inventario.join('\n- ')));
 bot.onText(/\/regalo/, (msg) => bot.sendMessage(msg.chat.id, "🎁 Obsequio enviado correctamente."));
 
-// ==========================================
-// SECCIÓN: GAMES
-// ==========================================
 bot.onText(/\/caraocruz\s+(\d+)\s+(cara|cruz)/i, (msg, match) => {
     const u = getUsuario(msg.from.id);
     const cant = parseInt(match[1]);
@@ -378,9 +369,6 @@ bot.onText(/\/frase/, (msg) => bot.sendMessage(msg.chat.id, "✨ \"El éxito es 
 bot.onText(/\/ruleta/, (msg) => bot.sendMessage(msg.chat.id, "🎰 Girando ruleta... ¡Ganaste un bono sorpresa de $200!"));
 bot.onText(/\/ahorcado/, (msg) => bot.sendMessage(msg.chat.id, "🕹️ **AHORCADO:** _ _ p _ _ (Palabra oculta relacionada con tecnología)"));
 
-// ==========================================
-// SECCIÓN: RANDOM (INFORMACIÓN REAL)
-// ==========================================
 bot.onText(/\/clima(?:\s+(.+))?/, async (msg, match) => {
     const ciudad = match[1] ? match[1].trim() : 'Mexico';
     try {
@@ -439,9 +427,6 @@ bot.onText(/\/elegir\s+(.+)/, (msg, match) => {
 
 bot.onText(/\/sticker/, (msg) => bot.sendMessage(msg.chat.id, "🖼️ Envía o responde a una imagen para convertirla en sticker."));
 
-// ==========================================
-// SECCIÓN: ENLACES
-// ==========================================
 bot.onText(/\/reglas/, (msg) => bot.sendMessage(msg.chat.id, "📜 **Reglas del grupo:**\n1. Respeto\n2. Cero spam\n3. Diviértete"));
 bot.onText(/\/web_oficial/, (msg) => bot.sendMessage(msg.chat.id, "🌐 Web oficial: https://carrd.co"));
 bot.onText(/\/cuenta_tiktok/, (msg) => bot.sendMessage(msg.chat.id, "📱 TikTok oficial."));
@@ -449,62 +434,47 @@ bot.onText(/\/community_whatsapp/, (msg) => bot.sendMessage(msg.chat.id, "💬 C
 bot.onText(/\/canal_oficial/, (msg) => bot.sendMessage(msg.chat.id, "📢 Canal oficial del bot."));
 bot.onText(/\/canal_codigos/, (msg) => bot.sendMessage(msg.chat.id, "🎁 Canal de códigos y recompensas."));
 
+
 // ==========================================
-// SECCIÓN: MODERACIÓN Y ADMINISTRACIÓN 100% FUNCIONAL
+// SECCIÓN DE ADMINISTRACIÓN 100% FUNCIONAL
 // ==========================================
 
-// /ban @user (o respondiendo)
-bot.onText(/\/ban(?:\s+@(\S+))?/, async (msg, match) => {
-    if (msg.chat.type === 'private') return bot.sendMessage(msg.chat.id, "❌ Este comando solo funciona en grupos.");
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) {
-        return bot.sendMessage(msg.chat.id, "❌ No tienes permisos de administrador para usar este comando.");
-    }
+// /ban @user
+bot.onText(/\/ban(?:\s+@(\S+))?/, async (msg) => {
+    if (msg.chat.type === 'private') return;
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
+    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al mensaje del usuario que deseas banear.");
 
     try {
-        let targetId = null;
-        if (msg.reply_to_message) {
-            targetId = msg.reply_to_message.from.id;
-        } else if (match && match[1]) {
-            // Nota: Telegram por username directo requiere ID numérico o mención reply. 
-            // Si pasan texto plano intentamos avisar si no hay reply.
-            return bot.sendMessage(msg.chat.id, "⚠️️ Por favor responde al mensaje del usuario que deseas banear.");
-        }
-
-        if (!targetId) return bot.sendMessage(msg.chat.id, "⚠️ Responde al mensaje del usuario a banear.");
-        
-        await bot.banChatMember(msg.chat.id, targetId);
-        bot.sendMessage(msg.chat.id, "🔨 Usuario baneado exitosamente de la comunidad.");
-    } catch (e) {
-        bot.sendMessage(msg.chat.id, "❌ Error al banear. Asegúrate de que el bot sea administrador con permisos para banear.");
+        await bot.banChatMember(msg.chat.id, msg.reply_to_message.from.id);
+        bot.sendMessage(msg.chat.id, "🔨 Usuario baneado exitosamente.");
+    } catch {
+        bot.sendMessage(msg.chat.id, "❌ Error: Asegúrate de que el bot tenga privilegios de administración.");
     }
 });
 
 // /unban @user
-bot.onText(/\/unban(?:\s+@(\S+))?/, async (msg) => {
+bot.onText(/\/unban/, async (msg) => {
     if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) {
-        return bot.sendMessage(msg.chat.id, "❌ Requieres permisos de administrador.");
-    }
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
     if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al usuario que deseas desbanear.");
-    
+
     try {
         await bot.unbanChatMember(msg.chat.id, msg.reply_to_message.from.id, { only_if_banned: true });
         bot.sendMessage(msg.chat.id, "🔓 Usuario desbaneado correctamente.");
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error al desbanear al usuario.");
+        bot.sendMessage(msg.chat.id, "❌ Error al desbanear.");
     }
 });
 
-// /mute @user [tiempo] (ej: /mute @user 1h, 30m, 10s)
+// /mute @user [tiempo]
 bot.onText(/\/mute(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) {
-        return bot.sendMessage(msg.chat.id, "❌ No tienes permisos de administrador.");
-    }
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Debes responder al mensaje del usuario a silenciar.");
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
+    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al mensaje del usuario a silenciar.");
 
     const tiempoStr = match[1] ? match[1].toLowerCase().trim() : '1h';
-    let segundos = 3600; // Por defecto 1 hora
+    let segundos = 3600;
     if (tiempoStr.endsWith('m')) segundos = parseInt(tiempoStr) * 60;
     else if (tiempoStr.endsWith('h')) segundos = parseInt(tiempoStr) * 3600;
     else if (tiempoStr.endsWith('d')) segundos = parseInt(tiempoStr) * 86400;
@@ -517,9 +487,9 @@ bot.onText(/\/mute(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
             until_date: untilDate,
             permissions: { can_send_messages: false }
         });
-        bot.sendMessage(msg.chat.id, `🔇 Usuario silenciado exitosamente por ${tiempoStr}.`);
+        bot.sendMessage(msg.chat.id, `🔇 Usuario silenciado por ${tiempoStr}.`);
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error al silenciar. Verifica que el bot tenga privilegios de administrador.");
+        bot.sendMessage(msg.chat.id, "❌ Error al silenciar usuario.");
     }
 });
 
@@ -531,43 +501,47 @@ bot.onText(/\/unmute/, async (msg) => {
 
     try {
         await bot.restrictChatMember(msg.chat.id, msg.reply_to_message.from.id, {
-            permissions: {
-                can_send_messages: true,
-                can_send_media_messages: true,
-                can_send_other_messages: true,
-                can_add_web_page_previews: true
-            }
+            permissions: { can_send_messages: true, can_send_media_messages: true, can_send_other_messages: true, can_add_web_page_previews: true }
         });
-        bot.sendMessage(msg.chat.id, "🔊 Silenciamiento removido. El usuario ya puede hablar.");
+        bot.sendMessage(msg.chat.id, "🔊 Silenciamiento removido.");
     } catch {
         bot.sendMessage(msg.chat.id, "❌ Error al quitar el silencio.");
     }
 });
 
-// /onlyadmin on / off
-bot.onText(/\/onlyadmin\s+(on|off)/i, async (msg, match) => {
+// /onlyadmin on
+bot.onText(/\/onlyadmin\s+on/i, async (msg) => {
     if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) {
-        return bot.sendMessage(msg.chat.id, "❌ Requieres permisos de administrador.");
-    }
-    const activar = match[1].toLowerCase() === 'on';
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
+    const cfg = getGrupoConfig(msg.chat.id);
+    cfg.onlyadmin = true;
     try {
-        await bot.setChatPermissions(msg.chat.id, {
-            can_send_messages: !activar,
-            can_send_media_messages: !activar,
-            can_send_other_messages: !activar
-        });
-        bot.sendMessage(msg.chat.id, `🛡️ Modo solo administradores: **${activar ? 'ACTIVADO' : 'DESACTIVADO'}**`, { parse_mode: 'Markdown' });
+        await bot.setChatPermissions(msg.chat.id, { can_send_messages: false, can_send_media_messages: false, can_send_other_messages: false });
+        bot.sendMessage(msg.chat.id, "🛡️ Modo solo administradores activado. Los miembros ya no pueden hablar.");
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ El bot necesita permisos de administrador para cambiar permisos del chat.");
+        bot.sendMessage(msg.chat.id, "❌ El bot necesita permisos de administrador.");
     }
 });
 
-// /warn @user [razón]
+// /onlyadmin off
+bot.onText(/\/onlyadmin\s+off/i, async (msg) => {
+    if (msg.chat.type === 'private') return;
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
+    const cfg = getGrupoConfig(msg.chat.id);
+    cfg.onlyadmin = false;
+    try {
+        await bot.setChatPermissions(msg.chat.id, { can_send_messages: true, can_send_media_messages: true, can_send_other_messages: true, can_add_web_page_previews: true });
+        bot.sendMessage(msg.chat.id, "🔓 Modo solo administradores desactivado. El chat está abierto.");
+    } catch {
+        bot.sendMessage(msg.chat.id, "❌ El bot necesita permisos de administrador.");
+    }
+});
+
+// /warn @user[razón]
 bot.onText(/\/warn(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️️ Responde al usuario al que deseas advertir.");
+    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al usuario a advertir.");
 
     const userId = msg.reply_to_message.from.id;
     const razon = match[1] ? match[1].trim() : 'Sin razón especificada';
@@ -576,12 +550,12 @@ bot.onText(/\/warn(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     if (!cfg.warnsUsuarios[userId]) cfg.warnsUsuarios[userId] = 0;
     cfg.warnsUsuarios[userId]++;
 
-    bot.sendMessage(msg.chat.id, `⚠️ Advertencia aplicada a @${msg.reply_to_message.from.username || msg.reply_to_message.from.first_name}.\n📝 Razón: ${razón}\n📌 Advertencias totales: ${cfg.warnsUsuarios[userId]}/3`);
+    bot.sendMessage(msg.chat.id, `⚠️️ Advertencia (${cfg.warnsUsuarios[userId]}/3) aplicada a @${msg.reply_to_message.from.username || msg.reply_to_message.from.first_name}.\n📝 Razón: ${razón}`);
 
     if (cfg.warnsUsuarios[userId] >= 3) {
         try {
             await bot.banChatMember(msg.chat.id, userId);
-            bot.sendMessage(msg.chat.id, "🚨 El usuario ha alcanzado 3/3 advertencias y ha sido baneado automáticamente.");
+            bot.sendMessage(msg.chat.id, "🚨 El usuario alcanzó 3 advertencias y fue baneado automáticamente.");
             cfg.warnsUsuarios[userId] = 0;
         } catch {}
     }
@@ -596,115 +570,163 @@ bot.onText(/\/unwarn/, async (msg) => {
     const userId = msg.reply_to_message.from.id;
     const cfg = getGrupoConfig(msg.chat.id);
     cfg.warnsUsuarios[userId] = 0;
-    bot.sendMessage(msg.chat.id, "✅ Se han borrado todas las advertencias del usuario.");
+    bot.sendMessage(msg.chat.id, "✅ Advertencias retiradas al usuario.");
 });
 
-// /cerrar y /abrir grupo
+// /cerrar
 bot.onText(/\/cerrar/, async (msg) => {
     if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) {
-        return bot.sendMessage(msg.chat.id, "❌ No tienes permisos.");
-    }
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
     try {
         await bot.setChatPermissions(msg.chat.id, { can_send_messages: false });
-        bot.sendMessage(msg.chat.id, "🔒 El chat ha sido cerrado por administración.");
+        bot.sendMessage(msg.chat.id, "🔒 Chat cerrado.");
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error: El bot necesita permisos de administración.");
+        bot.sendMessage(msg.chat.id, "❌ Error de permisos.");
     }
 });
 
+// /abrir
 bot.onText(/\/abrir/, async (msg) => {
     if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) {
-        return bot.sendMessage(msg.chat.id, "❌ No tienes permisos.");
-    }
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
     try {
-        await bot.setChatPermissions(msg.chat.id, { 
-            can_send_messages: true, 
-            can_send_media_messages: true, 
-            can_send_other_messages: true,
-            can_add_web_page_previews: true 
-        });
-        bot.sendMessage(msg.chat.id, "🔓 El chat ha sido abierto para todos los miembros.");
+        await bot.setChatPermissions(msg.chat.id, { can_send_messages: true, can_send_media_messages: true, can_send_other_messages: true, can_add_web_page_previews: true });
+        bot.sendMessage(msg.chat.id, "🔓 Chat abierto.");
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error: El bot necesita permisos de administración.");
+        bot.sendMessage(msg.chat.id, "❌ Error de permisos.");
     }
 });
 
-// Antispam
-bot.onText(/\/antispam(?:\s+(on|off))?/i, async (msg, match) => {
+// /antispam
+bot.onText(/\/antispam(?!\S)/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
     const cfg = getGrupoConfig(msg.chat.id);
-    const estado = match && match[1] ? match[1].toLowerCase() === 'on' : !cfg.antispam;
-    cfg.antispam = estado;
-    bot.sendMessage(msg.chat.id, `🛡️ Protección Antispam: **${estado ? 'ACTIVADO' : 'DESACTIVADO'}**`, { parse_mode: 'Markdown' });
+    cfg.antispam = true;
+    bot.sendMessage(msg.chat.id, "🛡️ Antispam activado. Detecta 3 mensajes seguidos (adv) o 10 mensajes masivos por segundo (eliminación).");
 });
 
-// Antinsfw
-bot.onText(/\/antinsfw\s+(on|off)/i, async (msg, match) => {
+// /antispamoff
+bot.onText(/\/antispamoff/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const estado = match[1].toLowerCase() === 'on';
-    getGrupoConfig(msg.chat.id).antinsfw = estado;
-    bot.sendMessage(msg.chat.id, `🔞 Filtro AntiNSFW: **${estado ? 'ACTIVADO' : 'DESACTIVADO'}**`, { parse_mode: 'Markdown' });
+    const cfg = getGrupoConfig(msg.chat.id);
+    cfg.antispam = false;
+    bot.sendMessage(msg.chat.id, "🛡️ Antispam desactivado.");
 });
 
-// Antilink
-bot.onText(/\/antilink\s+(on|off)/i, async (msg, match) => {
+// /antinsfwon
+bot.onText(/\/antinsfwon/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const estado = match[1].toLowerCase() === 'on';
-    getGrupoConfig(msg.chat.id).antilink = estado;
-    bot.sendMessage(msg.chat.id, `🔗 Filtro Antilink: **${estado ? 'ACTIVADO' : 'DESACTIVADO'}**`, { parse_mode: 'Markdown' });
+    const cfg = getGrupoConfig(msg.chat.id);
+    cfg.antinsfw = true;
+    bot.sendMessage(msg.chat.id, "🔞 Filtro AntiNSFW activado.");
 });
 
+// /antinsfwoff
+bot.onText(/\/antinsfwoff/i, async (msg) => {
+    if (msg.chat.type === 'private') return;
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
+    const cfg = getGrupoConfig(msg.chat.id);
+    cfg.antinsfw = false;
+    bot.sendMessage(msg.chat.id, "🔞 Filtro AntiNSFW desactivado.");
+});
+
+// /antilinkon
+bot.onText(/\/antilinkon/i, async (msg) => {
+    if (msg.chat.type === 'private') return;
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
+    const cfg = getGrupoConfig(msg.chat.id);
+    cfg.antilink = true;
+    bot.sendMessage(msg.chat.id, "🔗 Antilink activado. Se eliminarán enlaces ajenos a plataformas oficiales.");
+});
+
+// /antilinkoff
+bot.onText(/\/antilinkoff/i, async (msg) => {
+    if (msg.chat.type === 'private') return;
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
+    const cfg = getGrupoConfig(msg.chat.id);
+    cfg.antilink = false;
+    bot.sendMessage(msg.chat.id, "🔗 Antilink desactivado.");
+});
+
+// /chatreset (Borra mensajes recientes reales de forma iterativa)
 bot.onText(/\/chatreset/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    gruposConfig[msg.chat.id] = undefined;
-    bot.sendMessage(msg.chat.id, "🔄 La configuración y estadísticas de este chat han sido restablecidas.");
+    
+    const currentId = msg.message_id;
+    let borrados = 0;
+    try {
+        for (let i = 0; i < 30; i++) {
+            const targetId = currentId - i;
+            await bot.deleteMessage(msg.chat.id, targetId).catch(() => {});
+            borrados++;
+        }
+        bot.sendMessage(msg.chat.id, `🔄 Chat reseteado. Se limpiaron los registros recientes del búfer.`);
+    } catch {
+        bot.sendMessage(msg.chat.id, "❌ Error al limpiar mensajes masivos.");
+    }
 });
 
+// /modeverificaty
 bot.onText(/\/modeverificaty/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
     const cfg = getGrupoConfig(msg.chat.id);
     cfg.modeverificaty = !cfg.modeverificaty;
-    bot.sendMessage(msg.chat.id, `🔐 Modo de verificación para nuevos miembros: **${cfg.modeverificaty ? 'ACTIVADO' : 'DESACTIVADO'}**`, { parse_mode: 'Markdown' });
+    
+    try {
+        await bot.setChatPermissions(msg.chat.id, { can_send_messages: !cfg.modeverificaty });
+        bot.sendMessage(msg.chat.id, `🔐 Modo Verificación: **${cfg.modeverificaty ? 'ACTIVADO' : 'DESACTIVADO'}**.\n📄 Texto de acceso: ¡Bienvenido a la comunidad! Por seguridad, verifica tu acceso para poder chatear.`, { parse_mode: 'Markdown' });
+    } catch {
+        bot.sendMessage(msg.chat.id, "❌ El bot requiere permisos de administrador.");
+    }
 });
 
+// /stats
 bot.onText(/\/stats/, async (msg) => {
     if (msg.chat.type === 'private') return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    bot.sendMessage(msg.chat.id, `📊 **ESTADÍSTICAS Y CONFIGURACIÓN DEL CHAT**\n🔗 Antilink: ${cfg.antilink ? 'ON' : 'OFF'}\n🔞 AntiNSFW: ${cfg.antinsfw ? 'ON' : 'OFF'}\n🛡️ Antispam: ${cfg.antispam ? 'ON' : 'OFF'}\n🔐 Verificación: ${cfg.modeverificaty ? 'ON' : 'OFF'}\n👑 Admins Custom: ${cfg.adminsCustom.size}`);
+    const chatId = msg.chat.id;
+    const stats = estadisticasChat[chatId];
+    
+    if (!stats || stats.totalMensajes === 0) {
+        return bot.sendMessage(msg.chat.id, "📊 **ESTADÍSTICAS DEL CHAT**\n- Mensajes totales registrados: 0\n- Usuario más activo: Ninguno aún.");
+    }
+
+    let usuarioMasActivo = "Ninguno";
+    let maxMsgs = -1;
+    for (const uid in stats.usuarios) {
+        if (stats.usuarios[uid].contador > maxMsgs) {
+            maxMsgs = stats.usuarios[uid].contador;
+            usuarioMasActivo = stats.usuarios[uid].nombre;
+        }
+    }
+
+    bot.sendMessage(msg.chat.id, `📊 **ESTADÍSTICAS DEL CHAT**\n💬 Mensajes totales enviados: **${stats.totalMensajes}**\n⭐ Usuario más activo: **@${usuarioMasActivo}** (${maxMsgs} mensajes)`);
 });
 
-bot.onText(/\/actividad/, async (msg) => {
-    if (msg.chat.type === 'private') return;
-    bot.sendMessage(msg.chat.id, "📈 **Reporte de Actividad:**\n- Mensajes analizados hoy: Activo\n- Ratio de participación: Óptimo\n- Seguridad del grupo: Segura");
-});
-
+// /config
 bot.onText(/\/config/, async (msg) => {
     if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    bot.sendMessage(msg.chat.id, "⚙️ Panel activo. Utiliza los comandos individuales (/antilink, /antinsfw, /antispam, /onlyadmin) para configurar.");
+    const cfg = getGrupoConfig(msg.chat.id);
+    bot.sendMessage(msg.chat.id, `⚙️ **OPCIONES DE ADMINISTRACIÓN ACTIVADAS**\n🔗 Antilink: ${cfg.antilink ? 'ON 🟢' : 'OFF 🔴'}\n🔞 AntiNSFW: ${cfg.antinsfw ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Antispam: ${cfg.antispam ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Solo Admins: ${cfg.onlyadmin ? 'ON 🟢' : 'OFF 🔴'}\n🔐 Verificación: ${cfg.modeverificaty ? 'ON 🟢' : 'OFF 🔴'}\n👑 Admins Custom: ${cfg.adminsCustom.size}`, { parse_mode: 'Markdown' });
 });
 
-// /addadmin @user y /deladmin @user (Administración interna de roles en el bot)
+// /addadmin @user
 bot.onText(/\/addadmin/, async (msg) => {
     if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) {
-        return bot.sendMessage(msg.chat.id, "❌ No tienes permisos para otorgar administración.");
-    }
+    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
     if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al mensaje del usuario para asignarlo como admin.");
     
     const targetId = msg.reply_to_message.from.id;
     const cfg = getGrupoConfig(msg.chat.id);
     cfg.adminsCustom.add(targetId);
-    bot.sendMessage(msg.chat.id, `👑 @${msg.reply_to_message.from.username || msg.reply_to_message.from.first_name} ha sido añadido como administrador del bot en este grupo.`);
+    bot.sendMessage(msg.chat.id, `👑 @${msg.reply_to_message.from.username || msg.reply_to_message.from.first_name} añadido como administrador.`);
 });
 
+// /deladmin @user
 bot.onText(/\/deladmin/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -716,41 +738,99 @@ bot.onText(/\/deladmin/, async (msg) => {
     bot.sendMessage(msg.chat.id, "👤 Rango de administrador removido al usuario.");
 });
 
+// /resetuser @user
 bot.onText(/\/resetuser/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️️ Responde al usuario que deseas resetear.");
+    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al usuario que deseas resetear.");
 
     delete usuariosData[msg.reply_to_message.from.id];
-    bot.sendMessage(msg.chat.id, "♻️ Los datos y economía de este usuario han sido restablecidos.");
+    bot.sendMessage(msg.chat.id, "♻️ Los datos y la economía de este usuario han sido restablecidos en el bot.");
 });
 
-// /ping REAL midiendo latencia exacta contra Telegram
+// /ping (Latencia real contra Telegram)
 bot.onText(/\/ping/, async (msg) => {
     const inicio = Date.now();
-    const sent = await bot.sendMessage(msg.chat.id, "🏓 Calculando latencia...");
+    const sent = await bot.sendMessage(msg.chat.id, "🏓 Calculando latencia real...");
     const fin = Date.now();
     const latenciaBot = fin - inicio;
-    bot.editMessageText(`🏓 **¡Pong!**\n⏱️ Latencia de respuesta: **${latenciaBot} ms**\n🌐 Estado de conexión: **Estable / 100% Operativo**`, {
+    bot.editMessageText(`🏓 **¡Pong Real!**\n⏱️️ Latencia: **${latenciaBot} ms**\n🌐 Servidores: **100% Operativos**`, {
         chat_id: msg.chat.id,
         message_id: sent.message_id,
         parse_mode: 'Markdown'
     });
 });
 
-// ==========================================
-// FILTROS AUTOMÁTICOS DE SEGURIDAD (ANTILINK / ANTISPAN)
-// ==========================================
-bot.on('message', (msg) => {
-    if (!msg.text || msg.chat.type === 'private') return;
-    const cfg = gruposConfig[msg.chat.id];
-    if (!cfg) return;
 
-    // Filtro Antilink
+// ==========================================
+// FILTROS Y MONITOREO DE SEGURIDAD AUTOMÁTICA
+// ==========================================
+bot.on('message', async (msg) => {
+    if (!msg.text || msg.chat.type === 'private') return;
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const cfg = getGrupoConfig(chatId);
+
+    // Conteo para Estadísticas y Actividad
+    if (!estadisticasChat[chatId]) {
+        estadisticasChat[chatId] = { totalMensajes: 0, usuarios: {} };
+    }
+    estadisticasChat[chatId].totalMensajes++;
+    if (!estadisticasChat[chatId].usuarios[userId]) {
+        estadisticasChat[chatId].usuarios[userId] = { nombre: msg.from.username || msg.from.first_name, contador: 0 };
+    }
+    estadisticasChat[chatId].usuarios[userId].contador++;
+
+    // Omitir filtros si el emisor es admin
+    const esAdmin = await verificarPermisosAdmin(chatId, userId);
+    if (esAdmin) return;
+
+    // 1. Antilink (Detecta links que no sean de apps/dominios oficiales reconocidos)
     if (cfg.antilink) {
-        if (/(https?:\/\/[^\s]+|t\.me\/[^\s]+|www\.[^\s]+)/i.test(msg.text)) {
-            bot.deleteMessage(msg.chat.id, msg.message_id).catch(() => {});
+        const regexLinks = /(https?:\/\/[^\s]+|t\.me\/[^\s]+|www\.[^\s]+)/i;
+        if (regexLinks.test(msg.text)) {
+            // Permitir dominios oficiales reconocidos (ej. youtube, tiktok, google, carrd, whatsapp)
+            const dominiosOficiales = /(youtube\.com|youtu\.be|tiktok\.com|whatsapp\.com|wa\.me|carrd\.co|google\.com)/i;
+            if (!dominiosOficiales.test(msg.text)) {
+                await bot.deleteMessage(chatId, msg.message_id).catch(() => {});
+                return;
+            }
+        }
+    }
+
+    // 2. AntiNSFW (Detección de palabras clave explícitas o contenido 18+)
+    if (cfg.antinsfw) {
+        const palabrasNsfw = /\b(porno|nsfw|xxx|desnudo|semen|coger|pene|vagina|orgy)\b/i;
+        if (palabrasNsfw.test(msg.text)) {
+            await bot.deleteMessage(chatId, msg.message_id).catch(() => {});
+            bot.sendMessage(chatId, `⚠️ Contenido 18+ bloqueado automáticamente para @${msg.from.username || msg.from.first_name}.`).then(sent => {
+                setTimeout(() => bot.deleteMessage(chatId, sent.message_id).catch(() => {}), 4000);
+            });
             return;
+        }
+    }
+
+    // 3. Antispam (3 mensajes seguidos = advertencia | 10 mensajes en segundos = eliminación)
+    if (cfg.antispam) {
+        const ahora = Date.now();
+        if (!controlSpam[chatId]) controlSpam[chatId] = {};
+        if (!controlSpam[chatId][userId]) controlSpam[chatId][userId] = [];
+
+        controlSpam[chatId][userId].push(ahora);
+        // Filtrar marcas de tiempo del último segundo (para spam masivo)
+        controlSpam[chatId][userId] = controlSpam[chatId][userId].filter(t => ahora - t < 2000);
+
+        if (controlSpam[chatId][userId].length >= 10) {
+            // Spam masivo: eliminar mensaje y banear temporalmente / silenciar
+            await bot.deleteMessage(chatId, msg.message_id).catch(() => {});
+            try {
+                await bot.restrictChatMember(chatId, userId, {
+                    until_date: Math.floor(Date.now() / 1000) + 300,
+                    permissions: { can_send_messages: false }
+                });
+                bot.sendMessage(chatId, `🚨 @${msg.from.username || msg.from.first_name} fue silenciado 5 minutos por enviar spam masivo.`);
+            } catch {}
+            controlSpam[chatId][userId] = [];
         }
     }
 });
