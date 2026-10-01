@@ -154,7 +154,7 @@ const menuCompleto = (user) => `▉               𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄
 /resetuser @user
 /ping`;
 
-const menuEconomia = `〓©꯭           𝗘𝖢ꄲ𝖬Ө𝖬Ｉ𝖠 
+const menuEconomia = `       
 
 /apostar [cantidad]
 /diario 
@@ -167,7 +167,7 @@ const menuEconomia = `〓©꯭           𝗘𝖢ꄲ𝖬Ө𝖬Ｉ𝖠
 /invertir [cantidad]
 /minar`;
 
-const menuPerfil = `〓©꯭          𝗣𝤤ꋪ𝖥𝖨L‌  
+const menuPerfil = `  
 
 /perfil [@user]
 /desc [texto]
@@ -181,7 +181,7 @@ const menuPerfil = `〓©꯭          𝗣𝤤ꋪ𝖥𝖨L‌
 /inventario
 /regalo @user [objeto]`;
 
-const menuGames = `〓©꯭          𝗚 𝖠 ᛖ𝐄ֆ
+const menuGames = `
 
 /caraocruz [cantidad] [cara o cruz]
 /dado [cantidad]
@@ -195,7 +195,7 @@ const menuGames = `〓©꯭          𝗚 𝖠 ᛖ𝐄ֆ
 /ahorcado
 /gacha`;
 
-const menuRandom = `〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬   
+const menuRandom = `
 
 /clima [ciudad/pais]
 /hora [pais/ciudad]
@@ -208,7 +208,9 @@ const menuRandom = `〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬
 /elegir [opcion/opcion]
 /sticker (envía o responde a una foto)`;
 
-const menuEnlaces = `»      🔗     |───────────  ●●  ┘
+const menuEnlaces = `
+
+»      🔗     |───────────  ●●  ┘
 
 /reglas 
 /web_oficial 
@@ -217,9 +219,9 @@ const menuEnlaces = `»      🔗     |───────────  ●●
 /canal_oficial 
 /canal_codigos 
 
-─────────────────────┘`;
+─────────────────────┘   `;
 
-const menuModeracion = `〓©꯭          𝗠ꄲ𝣣𝗘Я𝖠匚꒐ӨΝ
+const menuModeracion = `
 
 /ban @user
 /unban @user
