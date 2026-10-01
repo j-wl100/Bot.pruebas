@@ -68,7 +68,7 @@ async function verificarPermisosAdmin(chatId, userId) {
 }
 
 // ==========================================
-// MENÚS Y SUBMENÚS DEL BOT
+// MENÚS Y SUBMENÚS DEL BOT (Sin texto "aqui tu enlace")
 // ==========================================
 const menuCompleto = (user) => `▉               𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄            ⟍●! 
      
@@ -120,12 +120,12 @@ const menuCompleto = (user) => `▉               𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄
 
 »      🔗     |───────────  ●●  ┘
 
-/reglas - aqui tu enlace
-/web_oficial - aqui tu enlace
-/cuenta_tiktok - aqui tu enlace
-/community_whatsapp - aqui tu enlace
-/canal_oficial - aqui tu enlace
-/canal_codigos - aqui tu enlace
+/reglas 
+/web_oficial 
+/cuenta_tiktok 
+/community_whatsapp 
+/canal_oficial 
+/canal_codigos 
 
 ─────────────────────┘
 
@@ -210,12 +210,12 @@ const menuRandom = `〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬
 
 const menuEnlaces = `»      🔗     |───────────  ●●  ┘
 
-/reglas - aqui tu enlace
-/web_oficial - aqui tu enlace
-/cuenta_tiktok - aqui tu enlace
-/community_whatsapp - aqui tu enlace
-/canal_oficial - aqui tu enlace
-/canal_codigos - aqui tu enlace
+/reglas 
+/web_oficial 
+/cuenta_tiktok 
+/community_whatsapp 
+/canal_oficial 
+/canal_codigos 
 
 ─────────────────────┘`;
 
@@ -732,12 +732,32 @@ bot.onText(/\/sticker/, async (msg) => {
     }
 });
 
-bot.onText(/\/reglas/, (msg) => bot.sendMessage(msg.chat.id, "📜 **Reglas del grupo:**\n1. Respeto\n2. Cero spam\n3. Diviértete"));
-bot.onText(/\/web_oficial/, (msg) => bot.sendMessage(msg.chat.id, "🌐 Web oficial: https://zspyct.carrd.co/"));
-bot.onText(/\/cuenta_tiktok/, (msg) => bot.sendMessage(msg.chat.id, "📱 TikTok oficial.")); 
-bot.onText(/\/community_whatsapp/, (msg) => bot.sendMessage(msg.chat.id, "💬 Comunidad de WhatsApp."));
-bot.onText(/\/canal_oficial/, (msg) => bot.sendMessage(msg.chat.id, "📢 Canal oficial del bot."));
-bot.onText(/\/canal_codigos/, (msg) => bot.sendMessage(msg.chat.id, "🎁 Canal de códigos y recompensas."));
+// ==========================================
+// COMANDOS DE ENLACES (Aquí van tus enlaces reales)
+// ==========================================
+bot.onText(/\/reglas(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, "📜 **Reglas del grupo:**\n1. Respeto\n2. Cero spam\n3. Diviértete\n\n🔗 [Ver reglas completas aqui tu enlace]");
+});
+
+bot.onText(/\/web_oficial(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, "🌐 Web oficial: aqui tu enlace");
+});
+
+bot.onText(/\/cuenta_tiktok(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, "📱 TikTok oficial: aqui tu enlace");
+});
+
+bot.onText(/\/community_whatsapp(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, "💬 Comunidad de WhatsApp: aqui tu enlace");
+});
+
+bot.onText(/\/canal_oficial(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, "📢 Canal oficial del bot: aqui tu enlace");
+});
+
+bot.onText(/\/canal_codigos(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, "🎁 Canal de códigos y recompensas: aqui tu enlace");
+});
 
 
 // ==========================================
@@ -817,7 +837,7 @@ bot.onText(/\/onlyadmin\s+on/i, async (msg) => {
     cfg.onlyadmin = true;
     try {
         await bot.setChatPermissions(msg.chat.id, { can_send_messages: false, can_send_media_messages: false, can_send_other_messages: false });
-        bot.sendMessage(msg.chat.id, "🛡️️ Modo solo administradores activado. Los miembros ya no pueden hablar.");
+        bot.sendMessage(msg.chat.id, "🛡 Modo solo administradores activado. Los miembros ya no pueden hablar.");
     } catch {
         bot.sendMessage(msg.chat.id, "❌ El bot necesita permisos de administrador.");
     }
@@ -1023,7 +1043,7 @@ bot.onText(/\/stats/, async (msg) => {
 bot.onText(/\/config/, async (msg) => {
     if (msg.chat.type === 'private') return;
     const cfg = getGrupoConfig(msg.chat.id);
-    bot.sendMessage(msg.chat.id, `⚙️ **OPCIONES DE ADMINISTRACIÓN ACTIVADAS**\n🔗 Antilink: ${cfg.antilink ? 'ON 🟢' : 'OFF 🔴'}\n🔞 AntiNSFW: ${cfg.antinsfw ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Antispam: ${cfg.antispam ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Solo Admins: ${cfg.onlyadmin ? 'ON 🟢' : 'OFF 🔴'}\n🔐 Verificación: ${cfg.modeverificaty ? 'ON 🟢' : 'OFF 🟢'}\n👑 Admins Custom: ${cfg.adminsCustom.size}`, { parse_mode: 'Markdown' });
+    bot.sendMessage(msg.chat.id, `⚙️ **OPCIONES DE ADMINISTRACIÓN ACTIVADAS**\n🔗 Antilink: ${cfg.antilink ? 'ON 🟢' : 'OFF 🔴'}\n🔞 AntiNSFW: ${cfg.antinsfw ? 'ON 🟢' : 'OFF 🔴'}\n🛡️️ Antispam: ${cfg.antispam ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Solo Admins: ${cfg.onlyadmin ? 'ON 🟢' : 'OFF 🔴'}\n🔐 Verificación: ${cfg.modeverificaty ? 'ON 🟢' : 'OFF 🟢'}\n👑 Admins Custom: ${cfg.adminsCustom.size}`, { parse_mode: 'Markdown' });
 });
 
 bot.onText(/\/addadmin/, async (msg) => {
