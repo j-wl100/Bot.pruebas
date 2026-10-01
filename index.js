@@ -736,15 +736,15 @@ bot.onText(/\/sticker/, async (msg) => {
 // COMANDOS DE ENLACES (Aquí van tus enlaces reales)
 // ==========================================
 bot.onText(/\/reglas(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, "📜 **Reglas del grupo:**\n1. Respeto\n2. Cero spam\n3. Diviértete\n\n🔗 [Ver reglas completas aqui tu enlace]");
+    bot.sendMessage(msg.chat.id, "📜 **Reglas del grupo:**\n1. Respeto\n2. Cero spam\n3. Diviértete\n\n🔗 [https://spyctsitie.neocities.org/]");
 });
 
 bot.onText(/\/web_oficial(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, "🌐 Web oficial: aqui tu enlace");
+    bot.sendMessage(msg.chat.id, "Web oficial:https://zspyct.carrd.co/");
 });
 
 bot.onText(/\/cuenta_tiktok(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, "📱 TikTok oficial: aqui tu enlace");
+    bot.sendMessage(msg.chat.id, "📱 TikTok oficial:https://www.tiktok.com/@tz.spyct?_r=1&_t=ZS-9ACYdNQsPaf");
 });
 
 bot.onText(/\/community_whatsapp(?!\S)/, (msg) => {
