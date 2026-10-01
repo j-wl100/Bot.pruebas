@@ -68,13 +68,10 @@ async function verificarPermisosAdmin(chatId, userId) {
 }
 
 // ==========================================
-// MENÚ PRINCIPAL COMPLETO
+// MENÚS Y SUBMENÚS DEL BOT
 // ==========================================
-const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     #!? 
+const menuCompleto = (user) => `▉               𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄            ⟍●! 
      
-
-〓©꯭           𝗘𝖢ꄲ𝖬Ө𝖬Ｉ𝖠 
-
 /apostar [cantidad]
 /diario 
 /trabajar
@@ -85,8 +82,6 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
 /crimen
 /invertir [cantidad]
 /minar
-
-〓©꯭          𝗣𝤤ꋪ𝖥𝖨L‌  
 
 /perfil [@user]
 /desc [texto]
@@ -100,8 +95,6 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
 /inventario
 /regalo @user [objeto]
 
-〓©꯭          𝗚 𝖠 ᛖ𝐄ֆ
-
 /caraocruz [cantidad] [cara o cruz]
 /dado [cantidad]
 /ppt [piedra/papel/tijera] [@user]
@@ -113,8 +106,6 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
 /ruleta
 /ahorcado
 /gacha
-
-〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬   
 
 /clima [ciudad/pais]
 /hora [pais/ciudad]
@@ -129,16 +120,106 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
 
 »      🔗     |───────────  ●●  ┘
 
-/reglas
-/web_oficial
-/cuenta_tiktok
-/community_whatsapp 
-/canal_oficial
-/canal_codigos
+/reglas - aqui tu enlace
+/web_oficial - aqui tu enlace
+/cuenta_tiktok - aqui tu enlace
+/community_whatsapp - aqui tu enlace
+/canal_oficial - aqui tu enlace
+/canal_codigos - aqui tu enlace
 
 ─────────────────────┘
 
-〓©꯭          𝗠ꄲ𝣣𝗘Я𝖠匚꒐ӨΝ
+/ban @user
+/unban @user
+/mute @user [tiempo]
+/unmute @user
+/onlyadmin on
+/onlyadmin off
+/warn @user [razón]
+/unwarn @user 
+/cerrar
+/abrir
+/antispam 
+/antispamoff
+/antinsfwon
+/antinsfwoff
+/antilinkon
+/antilinkoff
+/chatreset
+/modeverificaty
+/stats
+/config 
+/deladmin @user
+/addadmin @user
+/resetuser @user
+/ping`;
+
+const menuEconomia = `〓©꯭           𝗘𝖢ꄲ𝖬Ө𝖬Ｉ𝖠 
+
+/apostar [cantidad]
+/diario 
+/trabajar
+/trasferir @user [cantidad]
+/balance 
+/top [me/all]
+/loteria 
+/crimen
+/invertir [cantidad]
+/minar`;
+
+const menuPerfil = `〓©꯭          𝗣𝤤ꋪ𝖥𝖨L‌  
+
+/perfil [@user]
+/desc [texto]
+/perfilgenero [mujer/hombre/enby/otro]
+/perfilorientacion [bisexual/otro]
+/perfilpaís [texto]
+/perfilpronombres [he/she/otro]
+/perfilcumpleaños [DD/MM]
+/perfiltitulo [texto]
+/nivel 
+/inventario
+/regalo @user [objeto]`;
+
+const menuGames = `〓©꯭          𝗚 𝖠 ᛖ𝐄ֆ
+
+/caraocruz [cantidad] [cara o cruz]
+/dado [cantidad]
+/ppt [piedra/papel/tijera] [@user]
+/trivia
+/adivinanza
+/reto
+/chiste
+/frase
+/ruleta
+/ahorcado
+/gacha`;
+
+const menuRandom = `〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬   
+
+/clima [ciudad/pais]
+/hora [pais/ciudad]
+/distancia [lugar uno] / [lugar dos]
+/calculadora [cifra]
+/estadísticas 
+/significado [palabra]
+/traducir [idioma] [texto]
+/wiki [busqueda] 
+/elegir [opcion/opcion]
+/sticker (envía o responde a una foto)`;
+
+const menuEnlaces = `»      🔗     |───────────  ●●  ┘
+
+/reglas - aqui tu enlace
+/web_oficial - aqui tu enlace
+/cuenta_tiktok - aqui tu enlace
+/community_whatsapp - aqui tu enlace
+/canal_oficial - aqui tu enlace
+/canal_codigos - aqui tu enlace
+
+─────────────────────┘`;
+
+const menuModeracion = `〓©꯭          𝗠ꄲ𝣣𝗘Я𝖠匚꒐ӨΝ
 
 /ban @user
 /unban @user
@@ -231,7 +312,7 @@ const trabajosData = {
     ]
 };
 
-// // ==========================================
+// ==========================================
 // COMANDO GACHA (INVOCACIÓN DE PERSONAJES)
 // ==========================================
 bot.onText(/\/gacha(?!\S)/, (msg) => {
@@ -250,7 +331,6 @@ bot.onText(/\/gacha(?!\S)/, (msg) => {
                     `⭐ **Rareza:** ${p.rareza || 'Común'}\n\n` +
                     `🌐 *SPYCT.BOT - Colección*`;
 
-    // Verificamos si tiene una URL de imagen válida en el JSON, si no, manda un mensaje de texto con los datos
     if (p.imagen && (p.imagen.startsWith('http://') || p.imagen.startsWith('https://'))) {
         bot.sendPhoto(chatId, p.imagen, { 
             caption: caption, 
@@ -266,12 +346,40 @@ bot.onText(/\/gacha(?!\S)/, (msg) => {
 
 
 // ==========================================
-// COMANDOS GENERALES, ECONOMÍA, PERFIL, GAMES Y HERRAMIENTAS REALES
+// COMANDOS DE MENÚS Y SUBMENÚS
 // ==========================================
 bot.onText(/\/menu(?!\S)/, (msg) => {
     bot.sendMessage(msg.chat.id, menuCompleto(msg.from.username || msg.from.first_name));
 });
 
+bot.onText(/\/menueconomia(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, menuEconomia);
+});
+
+bot.onText(/\/menuperfil(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, menuPerfil);
+});
+
+bot.onText(/\/menugames(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, menuGames);
+});
+
+bot.onText(/\/menurandom(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, menuRandom);
+});
+
+bot.onText(/\/menuenlaces(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, menuEnlaces);
+});
+
+bot.onText(/\/menumoderacion(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, menuModeracion);
+});
+
+
+// ==========================================
+// COMANDOS DE ECONOMÍA, PERFIL, GAMES Y HERRAMIENTAS
+// ==========================================
 bot.onText(/\/apostar\s+(\d+)/, (msg, match) => {
     const user = getUsuario(msg.from.id);
     const cant = parseInt(match[1]);
@@ -341,7 +449,6 @@ bot.onText(/\/balance/, (msg) => {
     bot.sendMessage(msg.chat.id, `🏦 **BALANCE**\n💵 Efectivo: $${u.balance}\n💳 Banco: $${u.banco}`);
 });
 
-// --- COMANDO /TOP REAL ---
 bot.onText(/\/top(?:\s+(me|all))?/i, (msg, match) => {
     const tipo = match[1] ? match[1].toLowerCase() : 'all';
     const usuariosArray = Object.entries(usuariosData).map(([id, data]) => ({
@@ -389,7 +496,6 @@ bot.onText(/\/crimen/, (msg) => {
     bot.sendMessage(msg.chat.id, `🦹‍♂️ Operación ilícita completada. Ganancia: **$400**.`);
 });
 
-// --- COMANDO /INVERTIR REAL CON RIESGO ---
 bot.onText(/\/invertir\s+(\d+)/, (msg, match) => {
     const user = getUsuario(msg.from.id);
     const cantidad = parseInt(match[1]);
@@ -437,7 +543,6 @@ bot.onText(/\/perfiltitulo\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).ti
 bot.onText(/\/nivel/, (msg) => bot.sendMessage(msg.chat.id, `⭐ Tu nivel es **${getUsuario(msg.from.id).nivel}**.`));
 bot.onText(/\/inventario/, (msg) => bot.sendMessage(msg.chat.id, `🎒 **INVENTARIO**\n- ` + getUsuario(msg.from.id).inventario.join('\n- ')));
 
-// --- COMANDO /REGALO REAL CON INVENTARIO ---
 bot.onText(/\/regalo(?:\s+@(\S+))?(?:\s+(.+))?/, (msg, match) => {
     const userId = msg.from.id;
     const user = getUsuario(userId);
@@ -499,7 +604,7 @@ bot.onText(/\/clima(?:\s+(.+))?/, async (msg, match) => {
         const res = await fetch(`https://wttr.in/${encodeURIComponent(ciudad)}?format=j1`);
         const data = await res.json();
         const cur = data.current_condition[0];
-        bot.sendMessage(msg.chat.id, `🌍 **Clima en ${ciudad.toUpperCase()}**\n🌡️️ Temp: ${cur.temp_C}°C\n☁️ Condición: ${cur.weatherDesc[0].value}\n💧 Humedad: ${cur.humidity}%`);
+        bot.sendMessage(msg.chat.id, `🌍 **Clima en ${ciudad.toUpperCase()}**\n🌡 Temp: ${cur.temp_C}°C\n☁️ Condición: ${cur.weatherDesc[0].value}\n💧 Humedad: ${cur.humidity}%`);
     } catch {
         bot.sendMessage(msg.chat.id, `❌ No se pudo obtener el clima para "${ciudad}".`);
     }
@@ -515,7 +620,6 @@ bot.onText(/\/hora(?:\s+(.+))?/, (msg, match) => {
     }
 });
 
-// --- COMANDO /DISTANCIA REAL ---
 bot.onText(/\/distancia\s+(.+)\s*\/\s*(.+)/, async (msg, match) => {
     const origen = match[1].trim();
     const destino = match[2].trim();
@@ -556,7 +660,6 @@ bot.onText(/\/calculadora\s+(.+)/, (msg, match) => {
 
 bot.onText(/\/estadísticas/, (msg) => bot.sendMessage(msg.chat.id, "📊 Estadísticas generales del bot: 100% operativo, servidores estables."));
 
-// --- COMANDO /SIGNIFICADO REAL ---
 bot.onText(/\/significado\s+(.+)/, async (msg, match) => {
     const palabra = match[1].trim();
     try {
@@ -572,7 +675,6 @@ bot.onText(/\/significado\s+(.+)/, async (msg, match) => {
     }
 });
 
-// --- COMANDO /TRADUCIR REAL ---
 bot.onText(/\/traducir\s+(\S+)\s+(.+)/, async (msg, match) => {
     const idiomaDestino = match[1].toLowerCase();
     const textoTraducir = match[2];
@@ -607,7 +709,6 @@ bot.onText(/\/elegir\s+(.+)/, (msg, match) => {
     bot.sendMessage(msg.chat.id, `✨ He elegido: **${elegida}**`);
 });
 
-// --- COMANDO /STICKER REAL (FOTO A STICKER) ---
 bot.onText(/\/sticker/, async (msg) => {
     const chatId = msg.chat.id;
     let foto = null;
@@ -716,7 +817,7 @@ bot.onText(/\/onlyadmin\s+on/i, async (msg) => {
     cfg.onlyadmin = true;
     try {
         await bot.setChatPermissions(msg.chat.id, { can_send_messages: false, can_send_media_messages: false, can_send_other_messages: false });
-        bot.sendMessage(msg.chat.id, "🛡️ Modo solo administradores activado. Los miembros ya no pueden hablar.");
+        bot.sendMessage(msg.chat.id, "🛡️️ Modo solo administradores activado. Los miembros ya no pueden hablar.");
     } catch {
         bot.sendMessage(msg.chat.id, "❌ El bot necesita permisos de administrador.");
     }
@@ -922,7 +1023,7 @@ bot.onText(/\/stats/, async (msg) => {
 bot.onText(/\/config/, async (msg) => {
     if (msg.chat.type === 'private') return;
     const cfg = getGrupoConfig(msg.chat.id);
-    bot.sendMessage(msg.chat.id, `⚙️ **OPCIONES DE ADMINISTRACIÓN ACTIVADAS**\n🔗 Antilink: ${cfg.antilink ? 'ON 🟢' : 'OFF 🔴'}\n🔞 AntiNSFW: ${cfg.antinsfw ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Antispam: ${cfg.antispam ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Solo Admins: ${cfg.onlyadmin ? 'ON 🟢' : 'OFF 🔴'}\n🔐 Verificación: ${cfg.modeverificaty ? 'ON 🟢' : 'OFF 🔴'}\n👑 Admins Custom: ${cfg.adminsCustom.size}`, { parse_mode: 'Markdown' });
+    bot.sendMessage(msg.chat.id, `⚙️ **OPCIONES DE ADMINISTRACIÓN ACTIVADAS**\n🔗 Antilink: ${cfg.antilink ? 'ON 🟢' : 'OFF 🔴'}\n🔞 AntiNSFW: ${cfg.antinsfw ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Antispam: ${cfg.antispam ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Solo Admins: ${cfg.onlyadmin ? 'ON 🟢' : 'OFF 🔴'}\n🔐 Verificación: ${cfg.modeverificaty ? 'ON 🟢' : 'OFF 🟢'}\n👑 Admins Custom: ${cfg.adminsCustom.size}`, { parse_mode: 'Markdown' });
 });
 
 bot.onText(/\/addadmin/, async (msg) => {
