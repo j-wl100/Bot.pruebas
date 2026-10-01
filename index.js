@@ -112,10 +112,7 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
 /frase
 /ruleta
 /ahorcado
-
-〓©꯭          𝗚𝖠Ɔᕼᗅ (COLECCIÓN)
-
-/gacha - Invoca un personaje aleatorio
+/gacha
 
 〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬   
 
