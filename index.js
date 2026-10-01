@@ -83,7 +83,7 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
 /top [me/all]
 /loteria 
 /crimen
-/invertir
+/invertir [cantidad]
 /minar
 
 〓©꯭          𝗣𝤤ꋪ𝖥𝖨L‌  
@@ -98,7 +98,7 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
 /perfiltitulo [texto]
 /nivel 
 /inventario
-/regalo @user [regalo]
+/regalo @user [objeto]
 
 〓©꯭          𝗚 𝖠 ᛖ𝐄ֆ
 
@@ -118,14 +118,14 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
 
 /clima [ciudad/pais]
 /hora [pais/ciudad]
-/distancia [lugar uno/lugar dos]
+/distancia [lugar uno] / [lugar dos]
 /calculadora [cifra]
 /estadísticas 
 /significado [palabra]
 /traducir [idioma] [texto]
 /wiki [busqueda] 
 /elegir [opcion/opcion]
-/sticker [imagen]
+/sticker (envía o responde a una foto)
 
 »      🔗     |───────────  ●●  ┘
 
@@ -231,32 +231,42 @@ const trabajosData = {
     ]
 };
 
-// ==========================================
+// // ==========================================
 // COMANDO GACHA (INVOCACIÓN DE PERSONAJES)
 // ==========================================
 bot.onText(/\/gacha(?!\S)/, (msg) => {
-    if (personajes.length === 0) {
-        return bot.sendMessage(msg.chat.id, "⚠️ ¡El catálogo de personajes en `personajes.json` está vacío o aún no se ha configurado!");
+    const chatId = msg.chat.id;
+
+    if (!personajes || personajes.length === 0) {
+        return bot.sendMessage(chatId, "⚠️ ¡El catálogo de personajes en `personajes.json` está vacío o no se ha cargado correctamente!");
     }
 
-    // Elegir uno al azar
     const randomIndex = Math.floor(Math.random() * personajes.length);
     const p = personajes[randomIndex];
 
     const caption = `✨ **¡Has invocado un personaje!** ✨\n\n` +
-                    `👤 **Nombre:** ${p.nombre}\n` +
-                    `📂 **Origen:** ${p.origen}\n` +
-                    `⭐ **Rareza:** ${p.rareza}\n\n` +
+                    `**Nombre:** ${p.nombre || 'Desconocido'}\n` +
+                    `**Origen:** ${p.origen || 'Desconocido'}\n` +
+                    `⭐ **Rareza:** ${p.rareza || 'Común'}\n\n` +
                     `🌐 *SPYCT.BOT - Colección*`;
 
-    bot.sendPhoto(msg.chat.id, p.imagen, { 
-        caption: caption, 
-        parse_mode: 'Markdown' 
-    });
+    // Verificamos si tiene una URL de imagen válida en el JSON, si no, manda un mensaje de texto con los datos
+    if (p.imagen && (p.imagen.startsWith('http://') || p.imagen.startsWith('https://'))) {
+        bot.sendPhoto(chatId, p.imagen, { 
+            caption: caption, 
+            parse_mode: 'Markdown' 
+        }).catch((err) => {
+            console.error("Error al enviar foto del gacha:", err);
+            bot.sendMessage(chatId, `${caption}\n\n*(No se pudo cargar la imagen del personaje)*`, { parse_mode: 'Markdown' });
+        });
+    } else {
+        bot.sendMessage(chatId, `${caption}\n\n*(Sin imagen registrada en el catálogo)*`, { parse_mode: 'Markdown' });
+    }
 });
 
+
 // ==========================================
-// COMANDOS GENERALES, ECONOMÍA, PERFIL, GAMES, RANDOM Y ENLACES
+// COMANDOS GENERALES, ECONOMÍA, PERFIL, GAMES Y HERRAMIENTAS REALES
 // ==========================================
 bot.onText(/\/menu(?!\S)/, (msg) => {
     bot.sendMessage(msg.chat.id, menuCompleto(msg.from.username || msg.from.first_name));
@@ -331,18 +341,82 @@ bot.onText(/\/balance/, (msg) => {
     bot.sendMessage(msg.chat.id, `🏦 **BALANCE**\n💵 Efectivo: $${u.balance}\n💳 Banco: $${u.banco}`);
 });
 
-bot.onText(/\/top/, (msg) => bot.sendMessage(msg.chat.id, "🏆 **TOP GLOBAL**\n1. @Sistema - $1,000,000\n2. Tú - $2,500"));
+// --- COMANDO /TOP REAL ---
+bot.onText(/\/top(?:\s+(me|all))?/i, (msg, match) => {
+    const tipo = match[1] ? match[1].toLowerCase() : 'all';
+    const usuariosArray = Object.entries(usuariosData).map(([id, data]) => ({
+        id,
+        nombre: data.nombre || `Usuario_${id.slice(-4)}`,
+        balance: data.balance || 0,
+        nivel: data.nivel || 1
+    }));
+
+    if (usuariosArray.length === 0) {
+        return bot.sendMessage(msg.chat.id, "🏆 **TOP GLOBAL**\n\nAún no hay suficientes registros de usuarios activos en la memoria.");
+    }
+
+    usuariosArray.sort((a, b) => b.balance - a.balance);
+    const top10 = usuariosArray.slice(0, 10);
+
+    let texto = "🏆 **TOP 10 RIQUEZA GLOBAL** 🏆\n\n";
+    top10.forEach((u, index) => {
+        const medalla = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+        texto += `${medalla} ${u.nombre} — 💵 $${u.balance.toLocaleString()} (Nivel ${u.nivel})\n`;
+    });
+
+    if (tipo === 'me') {
+        const miId = msg.from.id.toString();
+        const miPos = usuariosArray.findIndex(u => u.id === miId);
+        if (miPos !== -1) {
+            texto += `\n📍 **Tu posición:** #${miPos + 1} con $${usuariosArray[miPos].balance.toLocaleString()}`;
+        } else {
+            texto += `\n📍 **Tu posición:** No registrado en el ranking todavía.`;
+        }
+    }
+
+    bot.sendMessage(msg.chat.id, texto, { parse_mode: 'Markdown' });
+});
+
 bot.onText(/\/loteria/, (msg) => {
     const u = getUsuario(msg.from.id);
     u.balance += 500;
     bot.sendMessage(msg.chat.id, `🎟 ¡Compraste un boleto de lotería y ganaste **$500**!`);
 });
+
 bot.onText(/\/crimen/, (msg) => {
     const u = getUsuario(msg.from.id);
     u.balance += 400;
     bot.sendMessage(msg.chat.id, `🦹‍♂️ Operación ilícita completada. Ganancia: **$400**.`);
 });
-bot.onText(/\/invertir/, (msg) => bot.sendMessage(msg.chat.id, "📈 Inversión realizada en la bolsa de valores. Revisa en unas horas."));
+
+// --- COMANDO /INVERTIR REAL CON RIESGO ---
+bot.onText(/\/invertir\s+(\d+)/, (msg, match) => {
+    const user = getUsuario(msg.from.id);
+    const cantidad = parseInt(match[1]);
+
+    if (cantidad <= 0) return bot.sendMessage(msg.chat.id, "❌ Ingresa una cantidad válida para invertir.");
+    if (cantidad > user.balance) return bot.sendMessage(msg.chat.id, "❌ No tienes suficiente efectivo en tu cartera para arriesgar esa cantidad.");
+
+    user.balance -= cantidad;
+    const suerte = Math.random();
+    let resultadoTexto = "";
+    let ganancia = 0;
+
+    if (suerte < 0.4) {
+        resultadoTexto = `📉 ¡La bolsa cayó desplomada! Perdiste tu inversión de **$${cantidad.toLocaleString()}**.`;
+    } else if (suerte < 0.75) {
+        ganancia = Math.floor(cantidad * 1.5);
+        user.balance += ganancia;
+        resultadoTexto = `📈 ¡Tus acciones subieron! Invertiste $${cantidad.toLocaleString()} y retiraste **$${ganancia.toLocaleString()}** (Ganancia neta: +$${(ganancia - cantidad).toLocaleString()}).`;
+    } else {
+        ganancia = cantidad * 2;
+        user.balance += ganancia;
+        resultadoTexto = `🚀 ¡Oportunidad dorada! Tu inversión se duplicó exitosamente. Recibiste **$${ganancia.toLocaleString()}**.`;
+    }
+
+    bot.sendMessage(msg.chat.id, `📈 **BOLSA DE VALORES**\n\n${resultadoTexto}\n💵 Efectivo actual: **$${user.balance.toLocaleString()}**`, { parse_mode: 'Markdown' });
+});
+
 bot.onText(/\/minar/, (msg) => {
     const u = getUsuario(msg.from.id);
     u.balance += 300;
@@ -362,7 +436,26 @@ bot.onText(/\/perfilcumpleaños\s+(.+)/, (msg, match) => { getUsuario(msg.from.i
 bot.onText(/\/perfiltitulo\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).titulo = match[1]; bot.sendMessage(msg.chat.id, "✅ Título actualizado."); });
 bot.onText(/\/nivel/, (msg) => bot.sendMessage(msg.chat.id, `⭐ Tu nivel es **${getUsuario(msg.from.id).nivel}**.`));
 bot.onText(/\/inventario/, (msg) => bot.sendMessage(msg.chat.id, `🎒 **INVENTARIO**\n- ` + getUsuario(msg.from.id).inventario.join('\n- ')));
-bot.onText(/\/regalo/, (msg) => bot.sendMessage(msg.chat.id, "🎁 Obsequio enviado correctamente."));
+
+// --- COMANDO /REGALO REAL CON INVENTARIO ---
+bot.onText(/\/regalo(?:\s+@(\S+))?(?:\s+(.+))?/, (msg, match) => {
+    const userId = msg.from.id;
+    const user = getUsuario(userId);
+    const targetUsername = match[1];
+    const regaloItem = match[2] ? match[2].trim() : null;
+
+    if (!targetUsername || !regaloItem) {
+        return bot.sendMessage(msg.chat.id, "⚠️ Uso correcto: `/regalo @usuario [nombre del objeto]`", { parse_mode: 'Markdown' });
+    }
+
+    const indexItem = user.inventario.findIndex(item => item.toLowerCase() === regaloItem.toLowerCase());
+    if (indexItem === -1) {
+        return bot.sendMessage(msg.chat.id, `❌ No tienes el objeto **"${regaloItem}"** en tu inventario. Revisa con /inventario.`);
+    }
+
+    user.inventario.splice(indexItem, 1);
+    bot.sendMessage(msg.chat.id, `🎁 ¡Has regalado **${regaloItem}** a @${targetUsername} con éxito!\n🎒 Tu inventario ha sido actualizado.`);
+});
 
 bot.onText(/\/caraocruz\s+(\d+)\s+(cara|cruz)/i, (msg, match) => {
     const u = getUsuario(msg.from.id);
@@ -406,7 +499,7 @@ bot.onText(/\/clima(?:\s+(.+))?/, async (msg, match) => {
         const res = await fetch(`https://wttr.in/${encodeURIComponent(ciudad)}?format=j1`);
         const data = await res.json();
         const cur = data.current_condition[0];
-        bot.sendMessage(msg.chat.id, `🌍 **Clima en ${ciudad.toUpperCase()}**\n🌡️ Temp: ${cur.temp_C}°C\n☁️ Condición: ${cur.weatherDesc[0].value}\n💧 Humedad: ${cur.humidity}%`);
+        bot.sendMessage(msg.chat.id, `🌍 **Clima en ${ciudad.toUpperCase()}**\n🌡️️ Temp: ${cur.temp_C}°C\n☁️ Condición: ${cur.weatherDesc[0].value}\n💧 Humedad: ${cur.humidity}%`);
     } catch {
         bot.sendMessage(msg.chat.id, `❌ No se pudo obtener el clima para "${ciudad}".`);
     }
@@ -422,7 +515,33 @@ bot.onText(/\/hora(?:\s+(.+))?/, (msg, match) => {
     }
 });
 
-bot.onText(/\/distancia/, (msg) => bot.sendMessage(msg.chat.id, "📍 Distancia calculada: Aprox. 450 km entre los puntos indicados."));
+// --- COMANDO /DISTANCIA REAL ---
+bot.onText(/\/distancia\s+(.+)\s*\/\s*(.+)/, async (msg, match) => {
+    const origen = match[1].trim();
+    const destino = match[2].trim();
+    try {
+        const getCoords = async (lugar) => {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(lugar)}`, { headers: { 'User-Agent': 'SpyctBot/1.0' } });
+            const data = await res.json();
+            if (data && data.length > 0) return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+            throw new Error();
+        };
+        const c1 = await getCoords(origen);
+        const c2 = await getCoords(destino);
+
+        const rad = (x) => (x * Math.PI) / 180;
+        const R = 6371;
+        const dLat = rad(c2.lat - c1.lat);
+        const dLon = rad(c2.lon - c1.lon);
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(rad(c1.lat)) * Math.cos(rad(c2.lat)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distanciaKm = Math.round(R * c);
+
+        bot.sendMessage(msg.chat.id, `📍 **Cálculo de Distancia**\n🛫 De: ${origen}\n🛬 A: ${destino}\n📏 Distancia estimada: **${distanciaKm} km**`, { parse_mode: 'Markdown' });
+    } catch {
+        bot.sendMessage(msg.chat.id, "❌ No se pudieron calcular las coordenadas de ambos lugares. Usa el formato: `/distancia Ciudad A / Ciudad B`", { parse_mode: 'Markdown' });
+    }
+});
 
 bot.onText(/\/calculadora\s+(.+)/, (msg, match) => {
     try {
@@ -436,8 +555,40 @@ bot.onText(/\/calculadora\s+(.+)/, (msg, match) => {
 });
 
 bot.onText(/\/estadísticas/, (msg) => bot.sendMessage(msg.chat.id, "📊 Estadísticas generales del bot: 100% operativo, servidores estables."));
-bot.onText(/\/significado\s+(.+)/, (msg, match) => bot.sendMessage(msg.chat.id, `📖 Significado de "${match[1]}": Definición registrada en diccionarios oficiales.`));
-bot.onText(/\/traducir\s+(\S+)\s+(.+)/, (msg, match) => bot.sendMessage(msg.chat.id, `🌐 Traducción al idioma [${match[1]}]: "${match[2]}" traducido con éxito.`));
+
+// --- COMANDO /SIGNIFICADO REAL ---
+bot.onText(/\/significado\s+(.+)/, async (msg, match) => {
+    const palabra = match[1].trim();
+    try {
+        const res = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(palabra)}`);
+        const data = await res.json();
+        if (data && data.extract) {
+            bot.sendMessage(msg.chat.id, `📖 **Definición de "${data.title}":**\n\n${data.extract}`, { parse_mode: 'Markdown' });
+        } else {
+            bot.sendMessage(msg.chat.id, `❌ No se encontró un significado o artículo para "${palabra}".`);
+        }
+    } catch {
+        bot.sendMessage(msg.chat.id, "❌ Error al consultar la base de significados.");
+    }
+});
+
+// --- COMANDO /TRADUCIR REAL ---
+bot.onText(/\/traducir\s+(\S+)\s+(.+)/, async (msg, match) => {
+    const idiomaDestino = match[1].toLowerCase();
+    const textoTraducir = match[2];
+    try {
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textoTraducir)}&langpair=es|${idiomaDestino}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.responseData && data.responseData.translatedText) {
+            bot.sendMessage(msg.chat.id, `🌐 **Traducción al [${idiomaDestino.toUpperCase()}]**\n\n"${data.responseData.translatedText}"`, { parse_mode: 'Markdown' });
+        } else {
+            bot.sendMessage(msg.chat.id, "❌ No se pudo completar la traducción.");
+        }
+    } catch {
+        bot.sendMessage(msg.chat.id, "❌ Error al conectar con el servicio de traducción.");
+    }
+});
 
 bot.onText(/\/wiki\s+(.+)/, async (msg, match) => {
     try {
@@ -456,7 +607,29 @@ bot.onText(/\/elegir\s+(.+)/, (msg, match) => {
     bot.sendMessage(msg.chat.id, `✨ He elegido: **${elegida}**`);
 });
 
-bot.onText(/\/sticker/, (msg) => bot.sendMessage(msg.chat.id, "🖼️ Envía o responde a una imagen para convertirla en sticker."));
+// --- COMANDO /STICKER REAL (FOTO A STICKER) ---
+bot.onText(/\/sticker/, async (msg) => {
+    const chatId = msg.chat.id;
+    let foto = null;
+    if (msg.photo && msg.photo.length > 0) {
+        foto = msg.photo[msg.photo.length - 1];
+    } else if (msg.reply_to_message && msg.reply_to_message.photo) {
+        const fotosReply = msg.reply_to_message.photo;
+        foto = fotosReply[fotosReply.length - 1];
+    }
+
+    if (!foto) {
+        return bot.sendMessage(chatId, "⚠️ Envía una imagen con el comando `/sticker` en la descripción o responde a una foto con él.", { parse_mode: 'Markdown' });
+    }
+
+    try {
+        await bot.sendChatAction(chatId, 'upload_document');
+        await bot.sendSticker(chatId, foto.file_id);
+    } catch (error) {
+        console.error(error);
+        bot.sendMessage(chatId, "❌ Hubo un error al convertir la imagen en sticker. Asegúrate de que sea una foto válida.");
+    }
+});
 
 bot.onText(/\/reglas/, (msg) => bot.sendMessage(msg.chat.id, "📜 **Reglas del grupo:**\n1. Respeto\n2. Cero spam\n3. Diviértete"));
 bot.onText(/\/web_oficial/, (msg) => bot.sendMessage(msg.chat.id, "🌐 Web oficial: https://zspyct.carrd.co/"));
@@ -470,7 +643,6 @@ bot.onText(/\/canal_codigos/, (msg) => bot.sendMessage(msg.chat.id, "🎁 Canal 
 // SECCIÓN DE ADMINISTRACIÓN 100% FUNCIONAL
 // ==========================================
 
-// /ban @user
 bot.onText(/\/ban(?:\s+@(\S+))?/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -484,7 +656,6 @@ bot.onText(/\/ban(?:\s+@(\S+))?/, async (msg) => {
     }
 });
 
-// /unban @user
 bot.onText(/\/unban/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -498,7 +669,6 @@ bot.onText(/\/unban/, async (msg) => {
     }
 });
 
-// /mute @user [tiempo]
 bot.onText(/\/mute(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -524,7 +694,6 @@ bot.onText(/\/mute(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     }
 });
 
-// /unmute @user
 bot.onText(/\/unmute/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -540,7 +709,6 @@ bot.onText(/\/unmute/, async (msg) => {
     }
 });
 
-// /onlyadmin on
 bot.onText(/\/onlyadmin\s+on/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -554,7 +722,6 @@ bot.onText(/\/onlyadmin\s+on/i, async (msg) => {
     }
 });
 
-// /onlyadmin off
 bot.onText(/\/onlyadmin\s+off/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -568,7 +735,6 @@ bot.onText(/\/onlyadmin\s+off/i, async (msg) => {
     }
 });
 
-// /warn @user [razón]
 bot.onText(/\/warn(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -592,7 +758,6 @@ bot.onText(/\/warn(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     }
 });
 
-// /unwarn @user
 bot.onText(/\/unwarn/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -604,7 +769,6 @@ bot.onText(/\/unwarn/, async (msg) => {
     bot.sendMessage(msg.chat.id, "✅ Advertencias retiradas al usuario.");
 });
 
-// /cerrar
 bot.onText(/\/cerrar/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -616,7 +780,6 @@ bot.onText(/\/cerrar/, async (msg) => {
     }
 });
 
-// /abrir
 bot.onText(/\/abrir/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -628,7 +791,6 @@ bot.onText(/\/abrir/, async (msg) => {
     }
 });
 
-// /antispam
 bot.onText(/\/antispam(?!\S)/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -637,7 +799,6 @@ bot.onText(/\/antispam(?!\S)/i, async (msg) => {
     bot.sendMessage(msg.chat.id, "🛡️ Antispam activado. Detecta 3 mensajes seguidos (adv) o 10 mensajes masivos por segundo (eliminación).");
 });
 
-// /antispamoff
 bot.onText(/\/antispamoff/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -646,7 +807,6 @@ bot.onText(/\/antispamoff/i, async (msg) => {
     bot.sendMessage(msg.chat.id, "🛡️ Antispam desactivado.");
 });
 
-// /antinsfwon
 bot.onText(/\/antinsfwon/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -655,7 +815,6 @@ bot.onText(/\/antinsfwon/i, async (msg) => {
     bot.sendMessage(msg.chat.id, "🔞 Filtro AntiNSFW activado.");
 });
 
-// /antinsfwoff
 bot.onText(/\/antinsfwoff/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -664,7 +823,6 @@ bot.onText(/\/antinsfwoff/i, async (msg) => {
     bot.sendMessage(msg.chat.id, "🔞 Filtro AntiNSFW desactivado.");
 });
 
-// /antilinkon
 bot.onText(/\/antilinkon/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -673,7 +831,6 @@ bot.onText(/\/antilinkon/i, async (msg) => {
     bot.sendMessage(msg.chat.id, "🔗 Antilink activado. Se eliminarán enlaces ajenos a plataformas oficiales.");
 });
 
-// /antilinkoff
 bot.onText(/\/antilinkoff/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -682,7 +839,6 @@ bot.onText(/\/antilinkoff/i, async (msg) => {
     bot.sendMessage(msg.chat.id, "🔗 Antilink desactivado.");
 });
 
-// /chatreset (Envía el botón interactivo con el texto requerido)
 bot.onText(/\/chatreset/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -697,7 +853,6 @@ bot.onText(/\/chatreset/, async (msg) => {
     });
 });
 
-// Manejador del botón interactivo para el reseteo
 bot.on('callback_query', async (callbackQuery) => {
     const msg = callbackQuery.message;
     const data = callbackQuery.data;
@@ -729,7 +884,6 @@ bot.on('callback_query', async (callbackQuery) => {
     }
 });
 
-// /modeverificaty
 bot.onText(/\/modeverificaty/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -744,7 +898,6 @@ bot.onText(/\/modeverificaty/, async (msg) => {
     }
 });
 
-// /stats
 bot.onText(/\/stats/, async (msg) => {
     if (msg.chat.type === 'private') return;
     const chatId = msg.chat.id;
@@ -766,14 +919,12 @@ bot.onText(/\/stats/, async (msg) => {
     bot.sendMessage(msg.chat.id, `📊 **ESTADÍSTICAS DEL CHAT**\n💬 Mensajes totales enviados: **${stats.totalMensajes}**\n⭐ Usuario más activo: **@${usuarioMasActivo}** (${maxMsgs} mensajes)`);
 });
 
-// /config
 bot.onText(/\/config/, async (msg) => {
     if (msg.chat.type === 'private') return;
     const cfg = getGrupoConfig(msg.chat.id);
     bot.sendMessage(msg.chat.id, `⚙️ **OPCIONES DE ADMINISTRACIÓN ACTIVADAS**\n🔗 Antilink: ${cfg.antilink ? 'ON 🟢' : 'OFF 🔴'}\n🔞 AntiNSFW: ${cfg.antinsfw ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Antispam: ${cfg.antispam ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Solo Admins: ${cfg.onlyadmin ? 'ON 🟢' : 'OFF 🔴'}\n🔐 Verificación: ${cfg.modeverificaty ? 'ON 🟢' : 'OFF 🔴'}\n👑 Admins Custom: ${cfg.adminsCustom.size}`, { parse_mode: 'Markdown' });
 });
 
-// /addadmin @user
 bot.onText(/\/addadmin/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -785,7 +936,6 @@ bot.onText(/\/addadmin/, async (msg) => {
     bot.sendMessage(msg.chat.id, `👑 @${msg.reply_to_message.from.username || msg.reply_to_message.from.first_name} añadido como administrador.`);
 });
 
-// /deladmin @user
 bot.onText(/\/deladmin/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -797,7 +947,6 @@ bot.onText(/\/deladmin/, async (msg) => {
     bot.sendMessage(msg.chat.id, "👤 Rango de administrador removido al usuario.");
 });
 
-// /resetuser @user
 bot.onText(/\/resetuser/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -807,7 +956,6 @@ bot.onText(/\/resetuser/, async (msg) => {
     bot.sendMessage(msg.chat.id, "♻️ Los datos y la economía de este usuario han sido restablecidos en el bot.");
 });
 
-// /ping (Latencia real contra Telegram)
 bot.onText(/\/ping/, async (msg) => {
     const inicio = Date.now();
     const sent = await bot.sendMessage(msg.chat.id, "🏓 Calculando latencia real...");
@@ -830,7 +978,6 @@ bot.on('message', async (msg) => {
     const userId = msg.from.id;
     const cfg = getGrupoConfig(chatId);
 
-    // Conteo para Estadísticas y Actividad
     if (!estadisticasChat[chatId]) {
         estadisticasChat[chatId] = { totalMensajes: 0, usuarios: {} };
     }
@@ -840,11 +987,9 @@ bot.on('message', async (msg) => {
     }
     estadisticasChat[chatId].usuarios[userId].contador++;
 
-    // Omitir filtros si el emisor es admin
     const esAdmin = await verificarPermisosAdmin(chatId, userId);
     if (esAdmin) return;
 
-    // 1. Antilink
     if (cfg.antilink) {
         const regexLinks = /(https?:\/\/[^\s]+|t\.me\/[^\s]+|www\.[^\s]+)/i;
         if (regexLinks.test(msg.text)) {
@@ -856,7 +1001,6 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // 2. AntiNSFW
     if (cfg.antinsfw) {
         const palabrasNsfw = /\b(porno|nsfw|xxx|desnudo|semen|coger|pene|vagina|orgy)\b/i;
         if (palabrasNsfw.test(msg.text)) {
@@ -868,7 +1012,6 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // 3. Antispam
     if (cfg.antispam) {
         const ahora = Date.now();
         if (!controlSpam[chatId]) controlSpam[chatId] = {};
