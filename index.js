@@ -67,11 +67,9 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄   #!
 〓©꯭           𝗘𝖢ꄲ𝖬Ө𝖬Ｉ𝖠 
 
 /apostar [cantidad]
-/diario - reclama tu bono
-/trabajar [uber/ropa/vida_galante/comida/repartidor/albanil/telcel/limpiador/fotografo/default]
-/robar @user
-/banco [cantidad] 
-/transferir @user [cantidad]
+/diario 
+/trabajar
+/trasferir @user [cantidad]
 /balance 
 /top [me/all]
 /loteria 
