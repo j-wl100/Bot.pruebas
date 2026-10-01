@@ -59,10 +59,8 @@ async function verificarPermisosAdmin(chatId, userId) {
 // ==========================================
 // MENÚ PRINCIPAL COMPLETO
 // ==========================================
-const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄   #!? 
+const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     #!? 
      
-\▛      solicitado por @${user}          𔖢𔖢
-
 
 〓©꯭           𝗘𝖢ꄲ𝖬Ө𝖬Ｉ𝖠 
 
