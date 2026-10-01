@@ -742,11 +742,11 @@ bot.onText(/\/reglas(?!\S)/, (msg) => {
 });
 
 bot.onText(/\/web_oficial(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, "Web oficial:https://zspyct.carrd.co/");
+    bot.sendMessage(msg.chat.id, "https://zspyct.carrd.co/");
 });
 
 bot.onText(/\/cuenta_tiktok(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, "📱 TikTok oficial:https://www.tiktok.com/@tz.spyct?_r=1&_t=ZS-9ACYdNQsPaf");
+    bot.sendMessage(msg.chat.id, "https://www.tiktok.com/@tz.spyct?_r=1&_t=ZS-9ACYdNQsPaf");
 });
 
 bot.onText(/\/community_whatsapp(?!\S)/, (msg) => {
