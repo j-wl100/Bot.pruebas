@@ -1,5 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const http = require('http');
+const fs = require('fs');
 
 const token = process.env.TELEGRAM_TOKEN;
 if (!token) {
@@ -10,6 +11,16 @@ if (!token) {
 const bot = new TelegramBot(token, { polling: true });
 
 console.log("SPYCT.BOT está encendido y listo en el sistema...");
+
+// Cargar la base de datos de personajes (personajes.json)
+let personajes = [];
+try {
+    const data = fs.readFileSync('personajes.json', 'utf8');
+    personajes = JSON.parse(data);
+    console.log(`✅ Catálogo cargado: ${personajes.length} personajes encontrados.`);
+} catch (error) {
+    console.log("⚠️ Aún no se encuentra o no se puede leer el archivo personajes.json.");
+}
 
 // Bases de datos en memoria
 const usuariosData = {};
@@ -101,6 +112,10 @@ const menuCompleto = (user) => `▉          𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄     
 /frase
 /ruleta
 /ahorcado
+
+〓©꯭          𝗚𝖠Ɔᕼᗅ (COLECCIÓN)
+
+/gacha - Invoca un personaje aleatorio
 
 〓©꯭           𝗥𝗔ℕ𝖣Ø𝖬   
 
@@ -218,6 +233,30 @@ const trabajosData = {
         "🌟 Ayudaste en la logística de un proyecto comunitario local por **$300**."
     ]
 };
+
+// ==========================================
+// COMANDO GACHA (INVOCACIÓN DE PERSONAJES)
+// ==========================================
+bot.onText(/\/gacha(?!\S)/, (msg) => {
+    if (personajes.length === 0) {
+        return bot.sendMessage(msg.chat.id, "⚠️ ¡El catálogo de personajes en `personajes.json` está vacío o aún no se ha configurado!");
+    }
+
+    // Elegir uno al azar
+    const randomIndex = Math.floor(Math.random() * personajes.length);
+    const p = personajes[randomIndex];
+
+    const caption = `✨ **¡Has invocado un personaje!** ✨\n\n` +
+                    `👤 **Nombre:** ${p.nombre}\n` +
+                    `📂 **Origen:** ${p.origen}\n` +
+                    `⭐ **Rareza:** ${p.rareza}\n\n` +
+                    `🌐 *SPYCT.BOT - Colección*`;
+
+    bot.sendPhoto(msg.chat.id, p.imagen, { 
+        caption: caption, 
+        parse_mode: 'Markdown' 
+    });
+});
 
 // ==========================================
 // COMANDOS GENERALES, ECONOMÍA, PERFIL, GAMES, RANDOM Y ENLACES
@@ -532,7 +571,7 @@ bot.onText(/\/onlyadmin\s+off/i, async (msg) => {
     }
 });
 
-// /warn @user[razón]
+// /warn @user [razón]
 bot.onText(/\/warn(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
@@ -677,7 +716,6 @@ bot.on('callback_query', async (callbackQuery) => {
 
         const currentId = msg.message_id;
         try {
-            // Limpia hasta 60 mensajes recientes hacia atrás
             for (let i = 0; i < 60; i++) {
                 const targetId = currentId - i;
                 await bot.deleteMessage(msg.chat.id, targetId).catch(() => {});
@@ -809,7 +847,7 @@ bot.on('message', async (msg) => {
     const esAdmin = await verificarPermisosAdmin(chatId, userId);
     if (esAdmin) return;
 
-    // 1. Antilink (Detecta links que no sean de apps/dominios oficiales reconocidos)
+    // 1. Antilink
     if (cfg.antilink) {
         const regexLinks = /(https?:\/\/[^\s]+|t\.me\/[^\s]+|www\.[^\s]+)/i;
         if (regexLinks.test(msg.text)) {
@@ -821,7 +859,7 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // 2. AntiNSFW (Detección de palabras clave explícitas o contenido 18+)
+    // 2. AntiNSFW
     if (cfg.antinsfw) {
         const palabrasNsfw = /\b(porno|nsfw|xxx|desnudo|semen|coger|pene|vagina|orgy)\b/i;
         if (palabrasNsfw.test(msg.text)) {
