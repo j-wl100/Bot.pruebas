@@ -12,29 +12,25 @@ const bot = new TelegramBot(token, { polling: true });
 
 console.log("SPYCT.BOT está encendido y listo en el sistema...");
 
-// Cargar la base de datos de personajes (personajes.json)
-let personajes = [];
-try {
-    const data = fs.readFileSync('personajes.json', 'utf8');
-    personajes = JSON.parse(data);
-    console.log(`✅ Catálogo cargado: ${personajes.length} personajes encontrados.`);
-} catch (error) {
-    console.log("⚠️ Aún no se encuentra o no se puede leer el archivo personajes.json.");
-}
+// URL Raw corregida de GitHub para enviar fotos directamente
+const MENU_IMAGE_URL = "https://raw.githubusercontent.com/j-wl100/Bot.pruebas/b73d29e9c8636b91aeba31ebeef8743fec5b68c8/IMG_20261011_232149_903.jpg";
 
 // Bases de datos en memoria
 const usuariosData = {};
 const gruposConfig = {};
-const controlSpam = {}; // { chatId: { userId: [timestamps] } }
-const estadisticasChat = {}; // { chatId: { totalMensajes: 0, usuarios: { userId: { nombre, contador } } } }
 
 function getUsuario(userId) {
     if (!usuariosData[userId]) {
         usuariosData[userId] = { 
-            balance: 1000, banco: 5000, nivel: 1, exp: 0, 
-            desc: "Sin descripción", genero: "No especificado", orientacion: "No especificada", 
-            pais: "No especificado", pronombres: "No especificados", cumple: "No especificado", 
-            titulo: "Novato", inventario: ["Espada de Madera", "Poción básica"], warns: 0 
+            balance: 1000, 
+            banco: 5000, 
+            customName: "Sin nombre",
+            desc: "Sin descripción", 
+            identidad: "No especificado", 
+            orientacion: "No especificada", 
+            pronombre: "No especificado", 
+            mood: "Neutro",
+            warns: 0 
         };
     }
     return usuariosData[userId];
@@ -47,7 +43,6 @@ function getGrupoConfig(chatId) {
             antinsfw: false, 
             antispam: false, 
             onlyadmin: false,
-            modeverificaty: false,
             adminsCustom: new Set(),
             warnsUsuarios: {}
         };
@@ -68,73 +63,97 @@ async function verificarPermisosAdmin(chatId, userId) {
 }
 
 // ==========================================
-// MENÚS Y SUBMENÚS DEL BOT (Sin texto "aqui tu enlace")
+// MENÚ PRINCIPAL CON IMAGEN
 // ==========================================
-const menuCompleto = (user) => `▉               𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄            ⟍●! 
-     
+const menuCompleto = (user) => `𓄧 𖫰     ֺ   𓄧 𖫰      ֺ   𓄧 𖫰      ֺ   𓄧 𖫰      ֺ   𓄧 
+
+「​㋳」ㅤ¡𝗛𝗮𝗹𝗹𝗼! @${user} sᴏʏ   𝗦𝗣𝖸Ɔ𝖳-𝕭𝐎꓄,  𝖠𝗊𝗎𝗂 𝗍𝗂𝖾𝗇𝖾𝗌 𝗅𝖺 𝗅𝗂𝗌𝗍𝖺 𝖽𝖾 𝖼𝗈𝗆𝖺𝗇𝖽𝗈𝗌.
+
+𝖯𝖺𝗋𝖺 𝗏𝖾𝗋 𝗍𝗎 𝗉𝖾𝗋𝖿𝗂𝗅 𝗎𝗌𝖺 /perfil  ❞
+
+⸻   ֺ   𖫰    !  🔗  ! 𖫰      ֺ   ⸻
+
+々         𝗠𝗼𝗻𝗲𝗱𝗮  »  BYT-‽
+
+​〓ؕ     𝗪𝗲𝗯/𝗼𝗳𝗶𝗰𝗶𝗮𝗹  »  https://zspyct.carrd.co/
+
+⸻   ֺ   𖫰    ! 𓊫 ! 𖫰      ֺ    ⸻ㅤ
+ㅤㅤㅤ
+#▋         𝗖𝗼𝗺𝗮𝗻𝗱𝗼𝘀       _!?    
+
+%─────────────────
+ 
+   ●   𝖲𝖸𝖲.𝗘𝗖𝗢𝗡𝗢𝗠𝗜𝗔  ⟍  ™
+
+─────────────────
+
 /apostar [cantidad]
-/diario 
-/trabajar
-/trasferir @user [cantidad]
-/balance 
-/top [me/all]
-/loteria 
+/diaro [reclama]
+/trabajar 
+/robar @user
+/banco [cantidad]
+/transferir @user [cantidad]
+/balance
+/top all/me
+/loteria
 /crimen
 /invertir [cantidad]
 /minar
 
-/perfil [@user]
-/desc [texto]
-/perfilgenero [mujer/hombre/enby/otro]
-/perfilorientacion [bisexual/otro]
-/perfilpaís [texto]
-/perfilpronombres [he/she/otro]
-/perfilcumpleaños [DD/MM]
-/perfiltitulo [texto]
-/nivel 
-/inventario
-/regalo @user [objeto]
+%─────────────────
+ 
+   ●   𝖲𝖸𝖲.𝗚𝗔𝗠𝗘   ⟍  ™
 
-/caraocruz [cantidad] [cara o cruz]
-/dado [cantidad]
+─────────────────
+
+/caraocruz [cara o cruz]
+/dado 
 /ppt [piedra/papel/tijera] [@user]
 /trivia
 /adivinanza
 /reto
 /chiste
-/frase
-/ruleta
 /ahorcado
-/gacha
+
+%─────────────────
+ 
+   ●   𝖲𝖸𝖲.𝗥𝗔𝗡𝗗𝗢𝗠    ⟍  ™
+
+─────────────────
 
 /clima [ciudad/pais]
-/hora [pais/ciudad]
-/distancia [lugar uno] / [lugar dos]
-/calculadora [cifra]
-/estadísticas 
+/hora [pais/cuidad]
+/distancia [lugar uno/lugar dos]
+/calculadora [sifra]
 /significado [palabra]
-/traducir [idioma] [texto]
-/wiki [busqueda] 
+/traducir - idioma [texto]
+/wiki [busqueda]
 /elegir [opcion/opcion]
-/sticker (envía o responde a una foto)
+/sticker [imagen]
 
-»      🔗     |───────────  ●●  ┘
+%─────────────────
+ 
+   ●   𝖲𝖸𝖲.𝗣𝗘𝗥𝗙𝗜𝗟   ⟍  ™
 
-/reglas 
-/web_oficial 
-/cuenta_tiktok 
-/community_whatsapp 
-/canal_oficial 
-/canal_codigos 
+─────────────────
 
-─────────────────────┘
+/perfil
+/editname
+/editdescripcion
+/editidentidad 
+/editorientacion
+/editpronombre
+/editmood
+
+%─────────────────
+ 
+   ●   𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡𝗦    ⟍  ™
+
+─────────────────
 
 /ban @user
-/unban @user
-/mute @user [tiempo]
-/unmute @user
-/onlyadmin on
-/onlyadmin off
+/onlyadminon
+/onlyadminoff
 /warn @user [razón]
 /unwarn @user 
 /cerrar
@@ -142,463 +161,336 @@ const menuCompleto = (user) => `▉               𝗦𝗣𝖸Ɔ𝖳.𝓑𝐎꓄
 /antispam 
 /antispamoff
 /antinsfwon
-/antinsfwoff
+/antinstwoff
 /antilinkon
 /antilinkoff
 /chatreset
-/modeverificaty
-/stats
 /config 
 /deladmin @user
 /addadmin @user
 /resetuser @user
-/ping`;
-
-const menuEconomia = `       
-
-/apostar [cantidad]
-/diario 
-/trabajar
-/trasferir @user [cantidad]
-/balance 
-/top [me/all]
-/loteria 
-/crimen
-/invertir [cantidad]
-/minar`;
-
-const menuPerfil = `  
-
-/perfil [@user]
-/desc [texto]
-/perfilgenero [mujer/hombre/enby/otro]
-/perfilorientacion [bisexual/otro]
-/perfilpaís [texto]
-/perfilpronombres [he/she/otro]
-/perfilcumpleaños [DD/MM]
-/perfiltitulo [texto]
-/nivel 
-/inventario
-/regalo @user [objeto]`;
-
-const menuGames = `
-
-/caraocruz [cantidad] [cara o cruz]
-/dado [cantidad]
-/ppt [piedra/papel/tijera] [@user]
-/trivia
-/adivinanza
-/reto
-/chiste
-/frase
-/ruleta
-/ahorcado
-/gacha`;
-
-const menuRandom = `
-
-/clima [ciudad/pais]
-/hora [pais/ciudad]
-/distancia [lugar uno] / [lugar dos]
-/calculadora [cifra]
-/estadísticas 
-/significado [palabra]
-/traducir [idioma] [texto]
-/wiki [busqueda] 
-/elegir [opcion/opcion]
-/sticker (envía o responde a una foto)`;
-
-const menuEnlaces = `
+/ping
 
 »      🔗     |───────────  ●●  ┘
 
-/reglas 
-/web_oficial 
-/cuenta_tiktok 
-/community_whatsapp 
-/canal_oficial 
-/canal_codigos 
+/reglas
+/web_oficial
+/community_whatsapp
 
-─────────────────────┘   `;
+─────────────────────┘`;
 
-const menuModeracion = `
-
-/ban @user
-/unban @user
-/mute @user [tiempo]
-/unmute @user
-/onlyadmin on
-/onlyadmin off
-/warn @user [razón]
-/unwarn @user 
-/cerrar
-/abrir
-/antispam 
-/antispamoff
-/antinsfwon
-/antinsfwoff
-/antilinkon
-/antilinkoff
-/chatreset
-/modeverificaty
-/stats
-/config 
-/deladmin @user
-/addadmin @user
-/resetuser @user
-/ping`;
-
-// ==========================================
-// BANCO DE TRABAJOS
-// ==========================================
-const trabajosData = {
-    uber: [
-        "🚗 Hiciste un viaje largo por la ciudad esquivando el tráfico pesado. Ganaste **$350** por el trayecto.",
-        "📱 Te tocó un pasajero silencioso pero te dejó una excelente propina digital. Recibiste **$420**.",
-        "⛽ Se te complicó una ruta por obras en la calle, aun así completaste el servicio con éxito y ganaste **$280**.",
-        "⭐ ¡Calificación de 5 estrellas! Tu cliente quedó fascinado con tu música y manejo. Obtuviste **$500**."
-    ],
-    ropa: [
-        "👗 Atendiste a una clienta exigente en la boutique y le armaste un outfit completo. Ganaste **$310** de comisión.",
-        "📦 Ayudaste a organizar el nuevo inventario de temporada y acomodar los escaparates. Recibiste **$250**.",
-        "🏷️ Hiciste rebajas y ventas especiales este turno. Te llevaste una ganancia neta de **$390**.",
-        "🤝 Cerraste una venta mayorista importante para un evento local. Ganaste jugosas comisiones por **$600**."
-    ],
-    vida_galante: [
-        "🌙 Tuviste una noche movida en la zona exclusiva del distrito nocturno. Ganaste **$800** por tus servicios.",
-        "🍸 Acompañaste a un cliente VIP en un prestigioso club de la ciudad. Te pagaron **$950**.",
-        "✨ Un encuentro discreto pero muy lucrativo al amanecer te dejó una ganancia de **$700**.",
-        "💸 La noche estuvo tranquila pero un cliente generoso te obsequió **$1,100** por tu compañía."
-    ],
-    comida: [
-        "🍔 Cocinaste cientos de hamburguesas a contratiempo en horas pico en el restaurante. Ganaste **$290**.",
-        "🍟 Atendiste la barra de servicio rápido con una sonrisa impecable. Recibiste **$220** más propinas.",
-        "🍳 Limpiaste la cocina y preparaste los pedidos de delivery más solicitados. Ganaste **$340**.",
-        "👨‍🍳 El chef principal te felicitó por tu rapidez y te dio un bono extra. Te llevaste **$450**."
-    ],
-    repartidor: [
-        "🛵 Entregaste paquetes express bajo la lluvia por toda la zona metropolitana. Ganaste **$330**.",
-        "🍕 Llevaste pedidos calientes a domicilio rompiendo el récord de velocidad. Recibiste **$270**.",
-        "📦 Cargaste mercancía pesada pero cumpliste con todas tus entregas a tiempo. Ganaste **$380**.",
-        "🎁 Un cliente te dio un billete extra por llegar antes de lo esperado. Te llevaste **$490**."
-    ],
-    albanil: [
-        "🧱 Levantaste un muro de ladrillos perfecto bajo el sol intenso de la tarde. Ganaste **$400**.",
-        "⚖️ Mezclaste cemento y ayudaste a vaciar la losa principal de la obra. Recibiste **$450**.",
-        "🏗️ Hiciste reparaciones de plomería y acabados finos en una fachada. Ganaste **$380**.",
-        "👷‍♂️ El contratista principal valoró tu esfuerzo físico diario y te pagó **$550**."
-    ],
-    telcel: [
-        "📡 Atendiste centro de atención a clientes renovando líneas y planes de datos. Ganaste **$350**.",
-        "📱 Resolviste fallas de señal y configuraste equipos móviles nuevos. Recibiste **$300**.",
-        "💼 Vendiste paquetes de portabilidad masiva superando tu cuota mensual. Ganaste **$600**.",
-        "🛠️ Diste soporte técnico exprés a usuarios frustrados con su red. Te llevaste **$390**."
-    ],
-    limpiador: [
-        "🧹 Dejaste impecables y relucientes las oficinas corporativas del centro. Ganaste **$260**.",
-        "🧽 Limpiaste cristales y alfombras de un edificio comercial completo. Recibiste **$320**.",
-        "✨ Realizaste una limpieza profunda post-evento en tiempo récord. Ganaste **$410**.",
-        "🧼 Desinfectaste áreas comunes y recibiste felicitaciones por tu pulcritud. Te llevaste **$290**."
-    ],
-    fotografo: [
-        "📸 Cubriste un evento social exclusivo capturando los mejores momentos. Ganaste **$600**.",
-        "🌅 Hiciste una sesión fotográfica urbana en exteriores con gran iluminación. Recibiste **$500**.",
-        "📷 Revelaste y editaste portafolios profesionales para modelos locales. Ganaste **$750**.",
-        "💡 Montaste iluminación de estudio para una marca de ropa importante. Te llevaste **$900**."
-    ],
-    default: [
-        "💼 Hiciste tareas generales de oficina y recados varios por la ciudad. Ganaste **$200**.",
-        "🛠️ Realizaste changas temporales de mantenimiento general. Recibiste **$240**.",
-        "📋 Archivaste documentos y organizaste bases de datos pendientes. Ganaste **$210**.",
-        "🌟 Ayudaste en la logística de un proyecto comunitario local por **$300**."
-    ]
-};
-
-// ==========================================
-// COMANDO GACHA (INVOCACIÓN DE PERSONAJES)
-// ==========================================
-bot.onText(/\/gacha(?!\S)/, (msg) => {
-    const chatId = msg.chat.id;
-
-    if (!personajes || personajes.length === 0) {
-        return bot.sendMessage(chatId, "⚠️ ¡El catálogo de personajes en `personajes.json` está vacío o no se ha cargado correctamente!");
-    }
-
-    const randomIndex = Math.floor(Math.random() * personajes.length);
-    const p = personajes[randomIndex];
-
-    const caption = `✨ **¡Has invocado un personaje!** ✨\n\n` +
-                    `**Nombre:** ${p.nombre || 'Desconocido'}\n` +
-                    `**Origen:** ${p.origen || 'Desconocido'}\n` +
-                    `⭐ **Rareza:** ${p.rareza || 'Común'}\n\n` +
-                    `🌐 *SPYCT.BOT - Colección*`;
-
-    if (p.imagen && (p.imagen.startsWith('http://') || p.imagen.startsWith('https://'))) {
-        bot.sendPhoto(chatId, p.imagen, { 
-            caption: caption, 
-            parse_mode: 'Markdown' 
-        }).catch((err) => {
-            console.error("Error al enviar foto del gacha:", err);
-            bot.sendMessage(chatId, `${caption}\n\n*(No se pudo cargar la imagen del personaje)*`, { parse_mode: 'Markdown' });
-        });
-    } else {
-        bot.sendMessage(chatId, `${caption}\n\n*(Sin imagen registrada en el catálogo)*`, { parse_mode: 'Markdown' });
-    }
-});
-
-
-// ==========================================
-// COMANDOS DE MENÚS Y SUBMENÚS
-// ==========================================
 bot.onText(/\/menu(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, menuCompleto(msg.from.username || msg.from.first_name));
-});
+    const userName = msg.from.username || msg.from.first_name;
+    const captionText = menuCompleto(userName);
 
-bot.onText(/\/menueconomia(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, menuEconomia);
-});
-
-bot.onText(/\/menuperfil(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, menuPerfil);
-});
-
-bot.onText(/\/menugames(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, menuGames);
-});
-
-bot.onText(/\/menurandom(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, menuRandom);
-});
-
-bot.onText(/\/menuenlaces(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, menuEnlaces);
-});
-
-bot.onText(/\/menumoderacion(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, menuModeracion);
+    bot.sendPhoto(msg.chat.id, MENU_IMAGE_URL, {
+        caption: captionText
+    }).catch((err) => {
+        console.error("Error al enviar foto del menú:", err);
+        bot.sendMessage(msg.chat.id, captionText);
+    });
 });
 
 
 // ==========================================
-// COMANDOS DE ECONOMÍA, PERFIL, GAMES Y HERRAMIENTAS
+// COMANDOS DE ECONOMÍA MINIMALISTAS
 // ==========================================
+bot.onText(/\/diaro(?!\S)/, (msg) => {
+    const userId = msg.from.id;
+    const user = getUsuario(userId);
+    const userName = msg.from.username || msg.from.first_name;
+    user.balance += 1000;
+
+    bot.sendMessage(msg.chat.id, `▉        𝖲𝖸𝖲.𝗖𝗟𝗔𝗜𝗠  ⟍ ＲＥＷＡＲＤＳ 
+│
+│  ᴜsᴇʀ  ⋮⋮  @${userName}
+│
+├────────────────────
+│ 
+│     ⛁  •  𝗛𝗔𝗭 𝗥𝗘𝖢𝗟𝗔𝗠𝗔𝖣𝖮 
+│     1,000 BYT-‽
+│
+│
+│     TOTAL BYT-‽ #${user.balance.toLocaleString()}
+│
+└───────────────────┘`);
+});
+
+bot.onText(/\/trabajar(?:\s+(.+))?/, (msg) => {
+    const userId = msg.from.id;
+    const user = getUsuario(userId);
+    const userName = msg.from.username || msg.from.first_name;
+    const pagos = [350, 420, 280, 500, 600];
+    const pAgo = pagos[Math.floor(Math.random() * pagos.length)];
+    const puestos = ["Uber", "Boutique", "Restaurante", "Repartidor", "Albañil"];
+    const puesto = puestos[Math.floor(Math.random() * puestos.length)];
+    const mensajesTrabajo = [
+        "Completaste tu turno asignado sin contratiempos.",
+        "Jornada laboral finalizada con éxito.",
+        "Tareas del turno cumplidas correctamente."
+    ];
+    const mensajeTrabajo = mensajesTrabajo[Math.floor(Math.random() * mensajesTrabajo.length)];
+
+    user.balance += pAgo;
+
+    bot.sendMessage(msg.chat.id, `❛   🧾ؒ        𝖲𝖸𝖲.𝗪𝗢𝗥𝗞   ⟍   𝖩𝖮𝖡𝖲 
+
+
+▋        ᴛʀᴀʙᴀᴊᴀᴅᴏʀ  𔗉  @${userName}
+
+────────────────────
+
+●         𝗣𝗨𝗘𝗦𝗧𝗢  [${puesto}]
+
+  
+𝆓       ¡ ᴛᴜʀɴᴏ ᴛᴇʀᴍɪɴᴀᴅᴏ ! 
+
+
+${mensajeTrabajo}
+
+
+𝗣𝗔𝗚𝗢 ::  ${pAgo} BYT-‽`);
+});
+
 bot.onText(/\/apostar\s+(\d+)/, (msg, match) => {
     const user = getUsuario(msg.from.id);
     const cant = parseInt(match[1]);
-    if (cant > user.balance) return bot.sendMessage(msg.chat.id, "❌ No tienes suficiente efectivo.");
+    const userName = msg.from.username || msg.from.first_name;
+    if (cant > user.balance) return bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Saldo insuficiente.`);
+
+    let resultado = "";
     if (Math.random() < 0.5) {
         user.balance += cant;
-        bot.sendMessage(msg.chat.id, `🎲 ¡Ganaste la apuesta! Cartera: $${user.balance}`);
+        resultado = `¡ Apuesta ganada !  +${cant} BYT-‽`;
     } else {
         user.balance -= cant;
-        bot.sendMessage(msg.chat.id, `🎲 Perdiste la apuesta. Cartera: $${user.balance}`);
+        resultado = `¡ Apuesta perdida !  -${cant} BYT-‽`;
     }
+
+    bot.sendMessage(msg.chat.id, `▉        𝖲𝖸𝖲.𝗕𝗘𝗧   ⟍   𝗚𝗔𝗠𝗕𝗟𝗘
+│
+│  ᴜsᴇʀ  ⋮⋮  @${userName}
+│
+├────────────────────
+│
+│     ${resultado}
+│
+│     TOTAL BYT-‽ #${user.balance.toLocaleString()}
+│
+└───────────────────┘`);
 });
 
-bot.onText(/\/diario/, (msg) => {
+bot.onText(/\/robar(?!\S)/, (msg) => {
     const user = getUsuario(msg.from.id);
-    user.balance += 1000;
-    bot.sendMessage(msg.chat.id, `🎁 Bono diario reclamado: **$1,000**. Cartera: $${user.balance}`, { parse_mode: 'Markdown' });
-});
+    const userName = msg.from.username || msg.from.first_name;
+    let mensaje = "";
 
-bot.onText(/\/trabajar(?:\s+(.+))?/, (msg, match) => {
-    const tipo = match[1] ? match[1].toLowerCase().trim() : 'default';
-    const user = getUsuario(msg.from.id);
-    const lista = ['uber', 'ropa', 'vida_galante', 'comida', 'repartidor', 'albanil', 'telcel', 'limpiador', 'fotografo'];
-    const key = lista.includes(tipo) ? tipo : 'default';
-    const variantes = trabajosData[key];
-    const texto = variantes[Math.floor(Math.random() * variantes.length)];
-
-    user.balance += 350;
-    user.exp += 15;
-    if (user.exp >= 100) { user.nivel++; user.exp = 0; }
-
-    bot.sendMessage(msg.chat.id, `👷‍♂️ **TRABAJO**\n\n${texto}\n\n💰 Cartera: $${user.balance}`, { parse_mode: 'Markdown' });
-});
-
-bot.onText(/\/robar/, (msg) => {
-    const user = getUsuario(msg.from.id);
     if (Math.random() < 0.4) {
         const botin = Math.floor(Math.random() * 300) + 100;
         user.balance += botin;
-        bot.sendMessage(msg.chat.id, `🥷 ¡Robo exitoso! Obtuviste **$${botin}**.`);
+        mensaje = `Operación exitosa :: +${botin} BYT-‽`;
     } else {
         user.balance = Math.max(0, user.balance - 150);
-        bot.sendMessage(msg.chat.id, `🚨 ¡Te atrapó la policía! Multa de **$150**.`);
+        mensaje = `Intercepción policial :: -150 BYT-‽`;
     }
+
+    bot.sendMessage(msg.chat.id, `❛   🥷        𝖲𝖸𝖲.𝗥𝗢𝗕   ⟍   𝗔𝗖𝗧𝗜𝗢𝗡
+
+
+▋        ᴜsᴇʀ  𔗉  @${userName}
+
+────────────────────
+
+${mensaje}
+
+TOTAL :: ${user.balance.toLocaleString()} BYT-‽`);
 });
 
 bot.onText(/\/banco(?:\s+(\d+))?/, (msg, match) => {
     const user = getUsuario(msg.from.id);
     const cant = match[1] ? parseInt(match[1]) : 0;
-    if (!cant) return bot.sendMessage(msg.chat.id, `🏦 Saldo en banco: $${user.banco}\nEfectivo: $${user.balance}`);
-    if (cant > user.balance) return bot.sendMessage(msg.chat.id, "❌ Fondos insuficientes en efectivo.");
+    if (!cant) {
+        return bot.sendMessage(msg.chat.id, `▉        𝖲𝖸𝖲.𝗕𝗔𝗡𝗞   ⟍   𝗔𝗖𝗖𝗢𝗨𝗡𝗧
+│
+├────────────────────
+│  Efectivo  :: ${user.balance.toLocaleString()} BYT-‽
+│  Banco     :: ${user.banco.toLocaleString()} BYT-‽
+└───────────────────┘`);
+    }
+
+    if (cant > user.balance) return bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Fondos insuficientes en efectivo.`);
     user.balance -= cant;
     user.banco += cant;
-    bot.sendMessage(msg.chat.id, `✅ Has depositado **$${cant}** al banco.`);
+
+    bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗕𝗔𝗡𝗞 ︱ Depósito completado :: +${cant} BYT-‽`);
 });
 
 bot.onText(/\/transferir\s+@(\S+)\s+(\d+)/, (msg, match) => {
     const user = getUsuario(msg.from.id);
     const cant = parseInt(match[2]);
-    if (cant > user.balance) return bot.sendMessage(msg.chat.id, "❌ No tienes tanto dinero para transferir.");
+    if (cant > user.balance) return bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Saldo insuficiente.`);
     user.balance -= cant;
-    bot.sendMessage(msg.chat.id, `💸 Transferencia exitosa de **$${cant}** a @${match[1]}.`);
+
+    bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗧𝗥𝗔𝗡𝗦𝗙𝗘𝗥 ︱ Se enviaron ${cant} BYT-‽ a @${match[1]}`);
 });
 
-bot.onText(/\/balance/, (msg) => {
+bot.onText(/\/balance(?!\S)/, (msg) => {
     const u = getUsuario(msg.from.id);
-    bot.sendMessage(msg.chat.id, `🏦 **BALANCE**\n💵 Efectivo: $${u.balance}\n💳 Banco: $${u.banco}`);
+    bot.sendMessage(msg.chat.id, `▉        𝖲𝖸𝖲.𝗕𝗔𝗟𝗔𝗡𝗖𝗘   ⟍   𝗦𝗧𝗔𝗧𝗨𝗦
+│
+├────────────────────
+│  Efectivo  :: ${u.balance.toLocaleString()} BYT-‽
+│  Banco     :: ${u.banco.toLocaleString()} BYT-‽
+└───────────────────┘`);
 });
 
 bot.onText(/\/top(?:\s+(me|all))?/i, (msg, match) => {
     const tipo = match[1] ? match[1].toLowerCase() : 'all';
     const usuariosArray = Object.entries(usuariosData).map(([id, data]) => ({
         id,
-        nombre: data.nombre || `Usuario_${id.slice(-4)}`,
-        balance: data.balance || 0,
-        nivel: data.nivel || 1
+        nombre: data.customName !== "Sin nombre" ? data.customName : `ID_${id.slice(-4)}`,
+        balance: data.balance || 0
     }));
 
-    if (usuariosArray.length === 0) {
-        return bot.sendMessage(msg.chat.id, "🏆 **TOP GLOBAL**\n\nAún no hay suficientes registros de usuarios activos en la memoria.");
-    }
+    if (usuariosArray.length === 0) return bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗥𝗔𝗡𝗞 ︱ Sin registros suficientes.");
 
     usuariosArray.sort((a, b) => b.balance - a.balance);
     const top10 = usuariosArray.slice(0, 10);
 
-    let texto = "🏆 **TOP 10 RIQUEZA GLOBAL** 🏆\n\n";
+    let texto = `. . . ──────────────────────\n         𝖲𝖸𝖲.𝗥𝗔𝗡𝗞𝗜𝗡𝗚 ︱ 𝗧𝗢𝗣 𝗥𝗜𝗤𝗨𝗘𝗭𝗔\n────────────────────────\n\n`;
     top10.forEach((u, index) => {
-        const medalla = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-        texto += `${medalla} ${u.nombre} — 💵 $${u.balance.toLocaleString()} (Nivel ${u.nivel})\n`;
+        texto += `#0${index + 1} :: ${u.nombre} ︱ ${u.balance.toLocaleString()} BYT-‽\n`;
     });
 
     if (tipo === 'me') {
         const miId = msg.from.id.toString();
         const miPos = usuariosArray.findIndex(u => u.id === miId);
-        if (miPos !== -1) {
-            texto += `\n📍 **Tu posición:** #${miPos + 1} con $${usuariosArray[miPos].balance.toLocaleString()}`;
-        } else {
-            texto += `\n📍 **Tu posición:** No registrado en el ranking todavía.`;
-        }
+        texto += `\n📍 Tu posición :: #${miPos !== -1 ? miPos + 1 : 'N/A'}`;
     }
 
-    bot.sendMessage(msg.chat.id, texto, { parse_mode: 'Markdown' });
+    bot.sendMessage(msg.chat.id, texto);
 });
 
-bot.onText(/\/loteria/, (msg) => {
+bot.onText(/\/loteria(?!\S)/, (msg) => {
     const u = getUsuario(msg.from.id);
     u.balance += 500;
-    bot.sendMessage(msg.chat.id, `🎟 ¡Compraste un boleto de lotería y ganaste **$500**!`);
+    bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗟𝗢𝗧𝗧𝗘𝗥𝗬 ︱ Boleto premiado :: +500 BYT-‽`);
 });
 
-bot.onText(/\/crimen/, (msg) => {
+bot.onText(/\/crimen(?!\S)/, (msg) => {
     const u = getUsuario(msg.from.id);
     u.balance += 400;
-    bot.sendMessage(msg.chat.id, `🦹‍♂️ Operación ilícita completada. Ganancia: **$400**.`);
+    bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗖𝗥𝗜𝗠𝗘 ︱ Operación sigilosa completada :: +400 BYT-‽`);
 });
 
 bot.onText(/\/invertir\s+(\d+)/, (msg, match) => {
     const user = getUsuario(msg.from.id);
     const cantidad = parseInt(match[1]);
 
-    if (cantidad <= 0) return bot.sendMessage(msg.chat.id, "❌ Ingresa una cantidad válida para invertir.");
-    if (cantidad > user.balance) return bot.sendMessage(msg.chat.id, "❌ No tienes suficiente efectivo en tu cartera para arriesgar esa cantidad.");
+    if (cantidad <= 0 || cantidad > user.balance) return bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Cantidad no disponible.`);
 
     user.balance -= cantidad;
     const suerte = Math.random();
-    let resultadoTexto = "";
-    let ganancia = 0;
+    let res = 0;
 
     if (suerte < 0.4) {
-        resultadoTexto = `📉 ¡La bolsa cayó desplomada! Perdiste tu inversión de **$${cantidad.toLocaleString()}**.`;
-    } else if (suerte < 0.75) {
-        ganancia = Math.floor(cantidad * 1.5);
-        user.balance += ganancia;
-        resultadoTexto = `📈 ¡Tus acciones subieron! Invertiste $${cantidad.toLocaleString()} y retiraste **$${ganancia.toLocaleString()}** (Ganancia neta: +$${(ganancia - cantidad).toLocaleString()}).`;
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗜𝗡𝗩𝗘𝗦𝗧 ︱ Caída de mercado :: -${cantidad} BYT-‽`);
     } else {
-        ganancia = cantidad * 2;
-        user.balance += ganancia;
-        resultadoTexto = `🚀 ¡Oportunidad dorada! Tu inversión se duplicó exitosamente. Recibiste **$${ganancia.toLocaleString()}**.`;
+        res = Math.floor(cantidad * 1.8);
+        user.balance += res;
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗜𝗡𝗩𝗘𝗦𝗧 ︱ Retorno positivo :: +${res} BYT-‽`);
     }
-
-    bot.sendMessage(msg.chat.id, `📈 **BOLSA DE VALORES**\n\n${resultadoTexto}\n💵 Efectivo actual: **$${user.balance.toLocaleString()}**`, { parse_mode: 'Markdown' });
 });
 
-bot.onText(/\/minar/, (msg) => {
+bot.onText(/\/minar(?!\S)/, (msg) => {
     const u = getUsuario(msg.from.id);
     u.balance += 300;
-    bot.sendMessage(msg.chat.id, `⛏️ Minaste criptomonedas con éxito. Ganaste **$300**.`);
+    bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗠𝗜𝗡𝗜𝗡𝗚 ︱ Bloque procesado :: +300 BYT-‽`);
 });
 
-bot.onText(/\/perfil/, (msg) => {
-    const u = getUsuario(msg.from.id);
-    bot.sendMessage(msg.chat.id, `👤 **PERFIL**\n📌 Nombre: ${msg.from.first_name}\n🏷️ Título: ${u.titulo}\n📝 Descripción: ${u.desc}\n⚧️ Género: ${u.genero}\n🏳‍🌈 Orientación: ${u.orientacion}\n🌍 País: ${u.pais}\n💬 Pronombres: ${u.pronombres}\n🎂 Cumpleaños: ${u.cumple}\n⭐ Nivel: ${u.nivel} (${u.exp}/100 XP)`);
-});
-bot.onText(/\/desc\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).desc = match[1]; bot.sendMessage(msg.chat.id, "✅ Descripción actualizada."); });
-bot.onText(/\/perfilgenero\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).genero = match[1]; bot.sendMessage(msg.chat.id, "✅ Género actualizado."); });
-bot.onText(/\/perfilorientacion\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).orientacion = match[1]; bot.sendMessage(msg.chat.id, "✅ Orientación actualizada."); });
-bot.onText(/\/perfilpaís\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).pais = match[1]; bot.sendMessage(msg.chat.id, "✅ País actualizado."); });
-bot.onText(/\/perfilpronombres\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).pronombres = match[1]; bot.sendMessage(msg.chat.id, "✅ Pronombres actualizados."); });
-bot.onText(/\/perfilcumpleaños\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).cumple = match[1]; bot.sendMessage(msg.chat.id, "✅ Cumpleaños actualizado."); });
-bot.onText(/\/perfiltitulo\s+(.+)/, (msg, match) => { getUsuario(msg.from.id).titulo = match[1]; bot.sendMessage(msg.chat.id, "✅ Título actualizado."); });
-bot.onText(/\/nivel/, (msg) => bot.sendMessage(msg.chat.id, `⭐ Tu nivel es **${getUsuario(msg.from.id).nivel}**.`));
-bot.onText(/\/inventario/, (msg) => bot.sendMessage(msg.chat.id, `🎒 **INVENTARIO**\n- ` + getUsuario(msg.from.id).inventario.join('\n- ')));
 
-bot.onText(/\/regalo(?:\s+@(\S+))?(?:\s+(.+))?/, (msg, match) => {
+// ==========================================
+// COMANDOS DE PERFIL Y EDICIÓN
+// ==========================================
+bot.onText(/\/perfil(?!\S)/, (msg) => {
     const userId = msg.from.id;
     const user = getUsuario(userId);
-    const targetUsername = match[1];
-    const regaloItem = match[2] ? match[2].trim() : null;
+    const displayName = user.customName !== "Sin nombre" ? user.customName : msg.from.first_name;
+    const identificador = `ID_${userId.toString().slice(-4)}`;
 
-    if (!targetUsername || !regaloItem) {
-        return bot.sendMessage(msg.chat.id, "⚠️ Uso correcto: `/regalo @usuario [nombre del objeto]`", { parse_mode: 'Markdown' });
-    }
+    bot.sendMessage(msg.chat.id, `. . . ──────────────────────
+${user.identidad} ︱ ${user.orientacion} ︱ ${user.pronombre}
+────────────────────────       
+                          ${user.mood}
+${identificador} :: ${displayName}  
+     
+"${user.desc}"
 
-    const indexItem = user.inventario.findIndex(item => item.toLowerCase() === regaloItem.toLowerCase());
-    if (indexItem === -1) {
-        return bot.sendMessage(msg.chat.id, `❌ No tienes el objeto **"${regaloItem}"** en tu inventario. Revisa con /inventario.`);
-    }
 
-    user.inventario.splice(indexItem, 1);
-    bot.sendMessage(msg.chat.id, `🎁 ¡Has regalado **${regaloItem}** a @${targetUsername} con éxito!\n🎒 Tu inventario ha sido actualizado.`);
+▉      ${user.balance.toLocaleString()} - BYT-‽`);
 });
 
-bot.onText(/\/caraocruz\s+(\d+)\s+(cara|cruz)/i, (msg, match) => {
+bot.onText(/\/editname\s+(.+)/, (msg, match) => {
+    getUsuario(msg.from.id).customName = match[1].trim();
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗣𝗘𝗥𝗙𝗜𝗟 ︱ Nombre actualizado.");
+});
+
+bot.onText(/\/editdescripcion\s+(.+)/, (msg, match) => {
+    getUsuario(msg.from.id).desc = match[1].trim();
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗣𝗘𝗥𝗙𝗜𝗟 ︱ Descripción actualizada.");
+});
+
+bot.onText(/\/editidentidad\s+(.+)/, (msg, match) => {
+    getUsuario(msg.from.id).identidad = match[1].trim();
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗣𝗘𝗥𝗙𝗜𝗟 ︱ Identidad actualizada.");
+});
+
+bot.onText(/\/editorientacion\s+(.+)/, (msg, match) => {
+    getUsuario(msg.from.id).orientacion = match[1].trim();
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗣𝗘𝗥𝗙𝗜𝗟 ︱ Orientación actualizada.");
+});
+
+bot.onText(/\/editpronombre\s+(.+)/, (msg, match) => {
+    getUsuario(msg.from.id).pronombre = match[1].trim();
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗣𝗘𝗥𝗙𝗜𝗟 ︱ Pronombres actualizados.");
+});
+
+bot.onText(/\/editmood\s+(.+)/, (msg, match) => {
+    getUsuario(msg.from.id).mood = match[1].trim();
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗣𝗘𝗥𝗙𝗜𝗟 ︱ Mood actualizado.");
+});
+
+
+// ==========================================
+// JUEGOS Y UTILIDADES MINIMALISTAS
+// ==========================================
+bot.onText(/\/caraocruz\s+(cara|cruz)/i, (msg, match) => {
     const u = getUsuario(msg.from.id);
-    const cant = parseInt(match[1]);
     const res = Math.random() < 0.5 ? 'cara' : 'cruz';
-    if (match[2].toLowerCase() === res) {
-        u.balance += cant;
-        bot.sendMessage(msg.chat.id, `🪙 Cayó **${res}**. ¡Ganaste! Cartera: $${u.balance}`);
+    if (match[1].toLowerCase() === res) {
+        u.balance += 100;
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗚𝗔𝗠𝗘 ︱ Resultado: ${res}. Ganaste +100 BYT-‽`);
     } else {
-        u.balance -= cant;
-        bot.sendMessage(msg.chat.id, `🪙 Cayó **${res}**. Perdiste. Cartera: $${u.balance}`);
+        u.balance = Math.max(0, u.balance - 50);
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗚𝗔𝗠𝗘 ︱ Resultado: ${res}. Perdiste -50 BYT-‽`);
     }
 });
-bot.onText(/\/dado(?:\s+(\d+))?/, (msg) => {
-    bot.sendMessage(msg.chat.id, `🎲 Salió el número: **${Math.floor(Math.random() * 6) + 1}**`);
+
+bot.onText(/\/dado(?!\S)/, (msg) => {
+    bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗚𝗔𝗠𝗘 ︱ Dado: ${Math.floor(Math.random() * 6) + 1}`);
 });
+
 bot.onText(/\/ppt\s+(piedra|papel|tijera)/i, (msg, match) => {
     const ops = ['piedra', 'papel', 'tijera'];
     const botC = ops[Math.floor(Math.random() * ops.length)];
-    bot.sendMessage(msg.chat.id, `🎮 Elegiste ${match[1]}, elegí ${botC}. ¡Resultado listo!`);
+    bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗚𝗔𝗠𝗘 ︱ Tú: ${match[1]} ︱ Bot: ${botC}`);
 });
-bot.onText(/\/trivia/, (msg) => bot.sendMessage(msg.chat.id, "❓ **TRIVIA:** ¿Cuál es el planeta más grande del sistema solar?\n*(Respuesta: Júpiter)*"));
-bot.onText(/\/adivinanza/, (msg) => bot.sendMessage(msg.chat.id, "🧩 **ADIVINANZA:** Blanca por dentro, verde por fuera. Si quieres que te lo diga, espera.\n*(Respuesta: La pera)*"));
-bot.onText(/\/reto/, (msg) => bot.sendMessage(msg.chat.id, "🎯 **RETO:** Envía un audio cantando tu canción favorita en los próximos 60 segundos."));
-bot.onText(/\/chiste/, async (msg) => {
-    try {
-        const res = await fetch('https://v2.jokeapi.dev/joke/Any?lang=es&type=single');
-        const data = await res.json();
-        bot.sendMessage(msg.chat.id, `😂 ${data.joke || "¿Qué hace una abeja en el gimnasio? ¡Zumba!"}`);
-    } catch {
-        bot.sendMessage(msg.chat.id, "😂 ¿Por qué los pájaros vuelan al sur en invierno? ¡Porque caminando tardan demasiado!");
-    }
-});
-bot.onText(/\/frase/, (msg) => bot.sendMessage(msg.chat.id, "✨ \"El éxito es la suma de pequeños esfuerzos repetidos día tras día.\""));
-bot.onText(/\/ruleta/, (msg) => bot.sendMessage(msg.chat.id, "🎰 Girando ruleta... ¡Ganaste un bono sorpresa de $200!"));
-bot.onText(/\/ahorcado/, (msg) => bot.sendMessage(msg.chat.id, "🕹️ **AHORCADO:** _ _ p _ _ (Palabra oculta relacionada con tecnología)"));
+
+bot.onText(/\/trivia(?!\S)/, (msg) => bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗧𝗥𝗜𝗩𝗜𝗔 ︱ ¿Planeta más grande del sistema solar?\n(Respuesta: Júpiter)"));
+bot.onText(/\/adivinanza(?!\S)/, (msg) => bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗤𝗨𝗜𝗭 ︱ Blanca por dentro, verde por fuera.\n(Respuesta: La pera)"));
+bot.onText(/\/reto(?!\S)/, (msg) => bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗖𝗛𝗔𝗟𝗟𝗘𝗡𝗚𝗘 ︱ Envía una foto del cielo o tu espacio actual."));
+bot.onText(/\/chiste(?!\S)/, (msg) => bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗥𝗔𝗡𝗗𝗢𝗠 ︱ ¿Qué le dice un bit a otro? Nos vemos en el bus."));
+bot.onText(/\/ahorcado(?!\S)/, (msg) => bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗚𝗔𝗠𝗘 ︱ _ _ P _ _ (Categoría: Tecnología)"));
 
 bot.onText(/\/clima(?:\s+(.+))?/, async (msg, match) => {
     const ciudad = match[1] ? match[1].trim() : 'Mexico';
@@ -606,19 +498,19 @@ bot.onText(/\/clima(?:\s+(.+))?/, async (msg, match) => {
         const res = await fetch(`https://wttr.in/${encodeURIComponent(ciudad)}?format=j1`);
         const data = await res.json();
         const cur = data.current_condition[0];
-        bot.sendMessage(msg.chat.id, `🌍 **Clima en ${ciudad.toUpperCase()}**\n🌡 Temp: ${cur.temp_C}°C\n☁️ Condición: ${cur.weatherDesc[0].value}\n💧 Humedad: ${cur.humidity}%`);
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗜𝗡𝗙𝗢 ︱ Clima en ${ciudad.toUpperCase()} :: ${cur.temp_C}°C ︱ Humedad: ${cur.humidity}%`);
     } catch {
-        bot.sendMessage(msg.chat.id, `❌ No se pudo obtener el clima para "${ciudad}".`);
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ No se obtuvo datos de clima.`);
     }
 });
 
 bot.onText(/\/hora(?:\s+(.+))?/, (msg, match) => {
     const zona = match[1] ? match[1].trim() : 'America/Mexico_City';
     try {
-        const h = new Date().toLocaleString('es-ES', { timeZone: zona, dateStyle: 'full', timeStyle: 'medium' });
-        bot.sendMessage(msg.chat.id, `⏰ **Hora (${zona})**\n🕒 ${h}`);
+        const h = new Date().toLocaleString('es-ES', { timeZone: zona, timeStyle: 'medium' });
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗧𝗜𝗠𝗘 ︱ Hora actual [${zona}] :: ${h}`);
     } catch {
-        bot.sendMessage(msg.chat.id, `❌ Zona horaria inválida.`);
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Zona horaria no válida.`);
     }
 });
 
@@ -643,9 +535,9 @@ bot.onText(/\/distancia\s+(.+)\s*\/\s*(.+)/, async (msg, match) => {
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const distanciaKm = Math.round(R * c);
 
-        bot.sendMessage(msg.chat.id, `📍 **Cálculo de Distancia**\n🛫 De: ${origen}\n🛬 A: ${destino}\n📏 Distancia estimada: **${distanciaKm} km**`, { parse_mode: 'Markdown' });
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗠𝗔𝗣𝗦 ︱ Distancia estimada :: ${distanciaKm} km`);
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ No se pudieron calcular las coordenadas de ambos lugares. Usa el formato: `/distancia Ciudad A / Ciudad B`", { parse_mode: 'Markdown' });
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ No se calcularon las coordenadas.`);
     }
 });
 
@@ -654,43 +546,36 @@ bot.onText(/\/calculadora\s+(.+)/, (msg, match) => {
         if (!/^[0-9+\-*/().\s]+$/.test(match[1])) throw new Error();
         // eslint-disable-next-line no-eval
         const res = eval(match[1]);
-        bot.sendMessage(msg.chat.id, `🧮 Resultado: **${res}**`);
+        bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗠𝗔𝗧𝗛 ︱ Resultado :: ${res}`);
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Operación inválida.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Operación no válida.");
     }
 });
-
-bot.onText(/\/estadísticas/, (msg) => bot.sendMessage(msg.chat.id, "📊 Estadísticas generales del bot: 100% operativo, servidores estables."));
 
 bot.onText(/\/significado\s+(.+)/, async (msg, match) => {
-    const palabra = match[1].trim();
     try {
-        const res = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(palabra)}`);
+        const res = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(match[1].trim())}`);
         const data = await res.json();
         if (data && data.extract) {
-            bot.sendMessage(msg.chat.id, `📖 **Definición de "${data.title}":**\n\n${data.extract}`, { parse_mode: 'Markdown' });
+            bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗜𝗡𝗙𝗢 ︱ ${data.title}\n\n"${data.extract}"`);
         } else {
-            bot.sendMessage(msg.chat.id, `❌ No se encontró un significado o artículo para "${palabra}".`);
+            bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Sin resultados.`);
         }
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error al consultar la base de significados.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Fallo en consulta.");
     }
 });
 
-bot.onText(/\/traducir\s+(\S+)\s+(.+)/, async (msg, match) => {
-    const idiomaDestino = match[1].toLowerCase();
-    const textoTraducir = match[2];
+bot.onText(/\/traducir\s+-\s+(\S+)\s+(.+)/, async (msg, match) => {
     try {
-        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textoTraducir)}&langpair=es|${idiomaDestino}`;
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(match[2])}&langpair=es|${match[1].toLowerCase()}`;
         const res = await fetch(url);
         const data = await res.json();
-        if (data && data.responseData && data.responseData.translatedText) {
-            bot.sendMessage(msg.chat.id, `🌐 **Traducción al [${idiomaDestino.toUpperCase()}]**\n\n"${data.responseData.translatedText}"`, { parse_mode: 'Markdown' });
-        } else {
-            bot.sendMessage(msg.chat.id, "❌ No se pudo completar la traducción.");
+        if (data && data.responseData) {
+            bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗧𝗥𝗔𝗡𝗦𝗟𝗔𝗧𝗘 ︱ "${data.responseData.translatedText}"`);
         }
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error al conectar con el servicio de traducción.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Error en la traducción.");
     }
 });
 
@@ -698,170 +583,99 @@ bot.onText(/\/wiki\s+(.+)/, async (msg, match) => {
     try {
         const res = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(match[1].trim())}`);
         const data = await res.json();
-        if (data.extract) bot.sendMessage(msg.chat.id, `📚 **Wikipedia: ${data.title}**\n\n${data.extract}\n\n🔗 [Enlace](${data.content_urls.desktop.page})`, { parse_mode: 'Markdown' });
-        else bot.sendMessage(msg.chat.id, "❌ No se encontró en Wikipedia.");
+        if (data.extract) bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗪𝗜𝗞𝗜 ︱ ${data.title}\n\n${data.extract}`);
+        else bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ No encontrado.");
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error al conectar con Wikipedia.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Fallo en Wikipedia.");
     }
 });
 
 bot.onText(/\/elegir\s+(.+)/, (msg, match) => {
     const opts = match[1].split('/');
     const elegida = opts[Math.floor(Math.random() * opts.length)].trim();
-    bot.sendMessage(msg.chat.id, `✨ He elegido: **${elegida}**`);
+    bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗦𝗘𝗟𝗘𝗖𝗧 ︱ Selección :: ${elegida}`);
 });
 
-bot.onText(/\/sticker/, async (msg) => {
+bot.onText(/\/sticker(?!\S)/, async (msg) => {
     const chatId = msg.chat.id;
     let foto = null;
     if (msg.photo && msg.photo.length > 0) {
         foto = msg.photo[msg.photo.length - 1];
     } else if (msg.reply_to_message && msg.reply_to_message.photo) {
-        const fotosReply = msg.reply_to_message.photo;
-        foto = fotosReply[fotosReply.length - 1];
+        foto = msg.reply_to_message.photo[msg.reply_to_message.photo.length - 1];
     }
 
-    if (!foto) {
-        return bot.sendMessage(chatId, "⚠️ Envía una imagen con el comando `/sticker` en la descripción o responde a una foto con él.", { parse_mode: 'Markdown' });
-    }
+    if (!foto) return bot.sendMessage(chatId, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Responde o adjunta una imagen.");
 
     try {
         await bot.sendChatAction(chatId, 'upload_document');
         await bot.sendSticker(chatId, foto.file_id);
-    } catch (error) {
-        console.error(error);
-        bot.sendMessage(chatId, "❌ Hubo un error al convertir la imagen en sticker. Asegúrate de que sea una foto válida.");
+    } catch {
+        bot.sendMessage(chatId, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ No se procesó el sticker.");
     }
 });
 
+
 // ==========================================
-// COMANDOS DE ENLACES (Aquí van tus enlaces reales)
+// ENLACES OFICIALES
 // ==========================================
 bot.onText(/\/reglas(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, "📜 **Reglas del grupo:**\n1. Respeto\n2. Cero spam\n3. Diviértete\n\n🔗 [https://spyctsitie.neocities.org/]");
+    bot.sendMessage(msg.chat.id, "📜 Reglas del grupo:\n1. Respeto\n2. Cero spam\n3. Contenido moderado\n\n🔗 https://spyctsitie.neocities.org/");
 });
 
 bot.onText(/\/web_oficial(?!\S)/, (msg) => {
     bot.sendMessage(msg.chat.id, "https://zspyct.carrd.co/");
 });
 
-bot.onText(/\/cuenta_tiktok(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, "https://www.tiktok.com/@tz.spyct?_r=1&_t=ZS-9ACYdNQsPaf");
-});
-
 bot.onText(/\/community_whatsapp(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, "💬 Comunidad de WhatsApp: aqui tu enlace");
-});
-
-bot.onText(/\/canal_oficial(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, "📢 Canal oficial del bot: aqui tu enlace");
-});
-
-bot.onText(/\/canal_codigos(?!\S)/, (msg) => {
-    bot.sendMessage(msg.chat.id, "🎁 Canal de códigos y recompensas: aqui tu enlace");
+    bot.sendMessage(msg.chat.id, "Comunidad de WhatsApp :: [Enlace no configurado]");
 });
 
 
 // ==========================================
-// SECCIÓN DE ADMINISTRACIÓN 100% FUNCIONAL
+// SECCIÓN DE ADMINISTRACIÓN
 // ==========================================
-
 bot.onText(/\/ban(?:\s+@(\S+))?/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al mensaje del usuario que deseas banear.");
+    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Responde al usuario a banear.");
 
     try {
         await bot.banChatMember(msg.chat.id, msg.reply_to_message.from.id);
-        bot.sendMessage(msg.chat.id, "🔨 Usuario baneado exitosamente.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Usuario sancionado.");
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error: Asegúrate de que el bot tenga privilegios de administración.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Sin permisos suficientes.");
     }
 });
 
-bot.onText(/\/unban/, async (msg) => {
+bot.onText(/\/onlyadminon/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al usuario que deseas desbanear.");
-
+    getGrupoConfig(msg.chat.id).onlyadmin = true;
     try {
-        await bot.unbanChatMember(msg.chat.id, msg.reply_to_message.from.id, { only_if_banned: true });
-        bot.sendMessage(msg.chat.id, "🔓 Usuario desbaneado correctamente.");
+        await bot.setChatPermissions(msg.chat.id, { can_send_messages: false });
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Modo Administradores activado.");
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error al desbanear.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Requiere permisos de admin.");
     }
 });
 
-bot.onText(/\/mute(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
+bot.onText(/\/onlyadminoff/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al mensaje del usuario a silenciar.");
-
-    const tiempoStr = match[1] ? match[1].toLowerCase().trim() : '1h';
-    let segundos = 3600;
-    if (tiempoStr.endsWith('m')) segundos = parseInt(tiempoStr) * 60;
-    else if (tiempoStr.endsWith('h')) segundos = parseInt(tiempoStr) * 3600;
-    else if (tiempoStr.endsWith('d')) segundos = parseInt(tiempoStr) * 86400;
-    else if (tiempoStr.endsWith('s')) segundos = parseInt(tiempoStr);
-
-    const untilDate = Math.floor(Date.now() / 1000) + segundos;
-
-    try {
-        await bot.restrictChatMember(msg.chat.id, msg.reply_to_message.from.id, {
-            until_date: untilDate,
-            permissions: { can_send_messages: false }
-        });
-        bot.sendMessage(msg.chat.id, `🔇 Usuario silenciado por ${tiempoStr}.`);
-    } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error al silenciar usuario.");
-    }
-});
-
-bot.onText(/\/unmute/, async (msg) => {
-    if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al usuario para quitar el silencio.");
-
-    try {
-        await bot.restrictChatMember(msg.chat.id, msg.reply_to_message.from.id, {
-            permissions: { can_send_messages: true, can_send_media_messages: true, can_send_other_messages: true, can_add_web_page_previews: true }
-        });
-        bot.sendMessage(msg.chat.id, "🔊 Silenciamiento removido.");
-    } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error al quitar el silencio.");
-    }
-});
-
-bot.onText(/\/onlyadmin\s+on/i, async (msg) => {
-    if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.onlyadmin = true;
-    try {
-        await bot.setChatPermissions(msg.chat.id, { can_send_messages: false, can_send_media_messages: false, can_send_other_messages: false });
-        bot.sendMessage(msg.chat.id, "🛡 Modo solo administradores activado. Los miembros ya no pueden hablar.");
-    } catch {
-        bot.sendMessage(msg.chat.id, "❌ El bot necesita permisos de administrador.");
-    }
-});
-
-bot.onText(/\/onlyadmin\s+off/i, async (msg) => {
-    if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.onlyadmin = false;
+    getGrupoConfig(msg.chat.id).onlyadmin = false;
     try {
         await bot.setChatPermissions(msg.chat.id, { can_send_messages: true, can_send_media_messages: true, can_send_other_messages: true, can_add_web_page_previews: true });
-        bot.sendMessage(msg.chat.id, "🔓 Modo solo administradores desactivado. El chat está abierto.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Modo Administradores desactivado.");
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ El bot necesita permisos de administrador.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Requiere permisos de admin.");
     }
 });
 
 bot.onText(/\/warn(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al usuario a advertir.");
+    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Responde al usuario.");
 
     const userId = msg.reply_to_message.from.id;
     const razon = match[1] ? match[1].trim() : 'Sin razón especificada';
@@ -870,12 +684,12 @@ bot.onText(/\/warn(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
     if (!cfg.warnsUsuarios[userId]) cfg.warnsUsuarios[userId] = 0;
     cfg.warnsUsuarios[userId]++;
 
-    bot.sendMessage(msg.chat.id, `⚠ Advertencia (${cfg.warnsUsuarios[userId]}/3) aplicada a @${msg.reply_to_message.from.username || msg.reply_to_message.from.first_name}.\n📝 Razón: ${razón}`);
+    bot.sendMessage(msg.chat.id, `𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Advertencia (${cfg.warnsUsuarios[userId]}/3) ︱ Razón: ${razon}`);
 
     if (cfg.warnsUsuarios[userId] >= 3) {
         try {
             await bot.banChatMember(msg.chat.id, userId);
-            bot.sendMessage(msg.chat.id, "🚨 El usuario alcanzó 3 advertencias y fue baneado automáticamente.");
+            bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Límite de advertencias alcanzado. Baneado.");
             cfg.warnsUsuarios[userId] = 0;
         } catch {}
     }
@@ -884,12 +698,10 @@ bot.onText(/\/warn(?:\s+@\S+)?(?:\s+(.+))?/, async (msg, match) => {
 bot.onText(/\/unwarn/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al usuario para retirar advertencias.");
+    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Responde al usuario.");
 
-    const userId = msg.reply_to_message.from.id;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.warnsUsuarios[userId] = 0;
-    bot.sendMessage(msg.chat.id, "✅ Advertencias retiradas al usuario.");
+    getGrupoConfig(msg.chat.id).warnsUsuarios[msg.reply_to_message.from.id] = 0;
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Advertencias reiniciadas.");
 });
 
 bot.onText(/\/cerrar/, async (msg) => {
@@ -897,9 +709,9 @@ bot.onText(/\/cerrar/, async (msg) => {
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
     try {
         await bot.setChatPermissions(msg.chat.id, { can_send_messages: false });
-        bot.sendMessage(msg.chat.id, "🔒 Chat cerrado.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Chat cerrado.");
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error de permisos.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Sin permisos.");
     }
 });
 
@@ -908,69 +720,62 @@ bot.onText(/\/abrir/, async (msg) => {
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
     try {
         await bot.setChatPermissions(msg.chat.id, { can_send_messages: true, can_send_media_messages: true, can_send_other_messages: true, can_add_web_page_previews: true });
-        bot.sendMessage(msg.chat.id, "🔓 Chat abierto.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Chat abierto.");
     } catch {
-        bot.sendMessage(msg.chat.id, "❌ Error de permisos.");
+        bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗘𝗥𝗥𝗢𝗥 ︱ Sin permisos.");
     }
 });
 
 bot.onText(/\/antispam(?!\S)/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.antispam = true;
-    bot.sendMessage(msg.chat.id, "🛡️ Antispam activado. Detecta 3 mensajes seguidos (adv) o 10 mensajes masivos por segundo (eliminación).");
+    getGrupoConfig(msg.chat.id).antispam = true;
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Antispam :: ACTIVADO");
 });
 
 bot.onText(/\/antispamoff/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.antispam = false;
-    bot.sendMessage(msg.chat.id, "🛡️ Antispam desactivado.");
+    getGrupoConfig(msg.chat.id).antispam = false;
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Antispam :: DESACTIVADO");
 });
 
 bot.onText(/\/antinsfwon/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.antinsfw = true;
-    bot.sendMessage(msg.chat.id, "🔞 Filtro AntiNSFW activado.");
+    getGrupoConfig(msg.chat.id).antinsfw = true;
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ AntiNSFW :: ACTIVADO");
 });
 
-bot.onText(/\/antinsfwoff/i, async (msg) => {
+bot.onText(/\/antinstwoff|antinsfwoff/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.antinsfw = false;
-    bot.sendMessage(msg.chat.id, "🔞 Filtro AntiNSFW desactivado.");
+    getGrupoConfig(msg.chat.id).antinsfw = false;
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ AntiNSFW :: DESACTIVADO");
 });
 
 bot.onText(/\/antilinkon/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.antilink = true;
-    bot.sendMessage(msg.chat.id, "🔗 Antilink activado. Se eliminarán enlaces ajenos a plataformas oficiales.");
+    getGrupoConfig(msg.chat.id).antilink = true;
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Antilink :: ACTIVADO");
 });
 
 bot.onText(/\/antilinkoff/i, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.antilink = false;
-    bot.sendMessage(msg.chat.id, "🔗 Antilink desactivado.");
+    getGrupoConfig(msg.chat.id).antilink = false;
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Antilink :: DESACTIVADO");
 });
 
-bot.onText(/\/chatreset/, async (msg) => {
+bot.onText(/\/chatreset(?!\S)/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
     
-    bot.sendMessage(msg.chat.id, "🧹 **Panel de Limpieza de Chat**\nHaz clic en el botón de abajo para vaciar los registros recientes del búfer.", {
-        parse_mode: 'Markdown',
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗖𝗟𝗘𝗔𝗡 ︱ Limpieza de registro requerida", {
         reply_markup: {
             inline_keyboard: [
-                [{ text: '🗑️ Vaciar chat para todos', callback_data: 'ejecutar_chatreset' }]
+                [{ text: 'Vaciar buffer reciente', callback_data: 'ejecutar_chatreset' }]
             ]
         }
     });
@@ -978,122 +783,76 @@ bot.onText(/\/chatreset/, async (msg) => {
 
 bot.on('callback_query', async (callbackQuery) => {
     const msg = callbackQuery.message;
-    const data = callbackQuery.data;
-
-    if (data === 'ejecutar_chatreset') {
+    if (callbackQuery.data === 'ejecutar_chatreset') {
         const esAdmin = await verificarPermisosAdmin(msg.chat.id, callbackQuery.from.id);
         if (!esAdmin) {
-            return bot.answerCallbackQuery(callbackQuery.id, { 
-                text: "❌ Solo los administradores pueden usar este botón.", 
-                show_alert: true 
-            });
+            return bot.answerCallbackQuery(callbackQuery.id, { text: "Acceso denegado.", show_alert: true });
         }
-
         const currentId = msg.message_id;
         try {
-            for (let i = 0; i < 60; i++) {
-                const targetId = currentId - i;
-                await bot.deleteMessage(msg.chat.id, targetId).catch(() => {});
+            for (let i = 0; i < 40; i++) {
+                await bot.deleteMessage(msg.chat.id, currentId - i).catch(() => {});
             }
-            bot.answerCallbackQuery(callbackQuery.id, { text: "✅ ¡Chat vaciado con éxito!" });
-            bot.editMessageText("🔄 **Chat reseteado.** Se limpiaron los registros recientes del búfer.", {
-                chat_id: msg.chat.id,
-                message_id: msg.message_id,
-                parse_mode: 'Markdown'
-            });
+            bot.answerCallbackQuery(callbackQuery.id, { text: "Chat purgado." });
         } catch {
-            bot.answerCallbackQuery(callbackQuery.id, { text: "❌ Error al limpiar los mensajes.", show_alert: true });
+            bot.answerCallbackQuery(callbackQuery.id, { text: "Error en purga.", show_alert: true });
         }
     }
 });
 
-bot.onText(/\/modeverificaty/, async (msg) => {
+bot.onText(/\/config(?!\S)/, async (msg) => {
+    if (msg.chat.type === 'private') return;
+    const cfg = getGrupoConfig(msg.chat.id);
+    bot.sendMessage(msg.chat.id, `. . . ──────────────────────
+         𝖲𝖸𝖲.𝗖𝗢𝗡𝗙𝗜𝗚 ︱ 𝗦𝗧𝗔𝗧𝗨𝗦
+────────────────────────       
+
+Antilink  :: ${cfg.antilink ? 'ON' : 'OFF'}
+AntiNSFW  :: ${cfg.antinsfw ? 'ON' : 'OFF'}
+Antispam  :: ${cfg.antispam ? 'ON' : 'OFF'}
+OnlyAdmin :: ${cfg.onlyadmin ? 'ON' : 'OFF'}`);
+});
+
+bot.onText(/\/addadmin(?!\S)/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.modeverificaty = !cfg.modeverificaty;
+    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Responde al usuario.");
     
-    try {
-        await bot.setChatPermissions(msg.chat.id, { can_send_messages: !cfg.modeverificaty });
-        bot.sendMessage(msg.chat.id, `🔐 Modo Verificación: **${cfg.modeverificaty ? 'ACTIVADO' : 'DESACTIVADO'}**.\n📄 Texto de acceso: ¡Bienvenido a la comunidad! Por seguridad, verifica tu acceso para poder chatear.`, { parse_mode: 'Markdown' });
-    } catch {
-        bot.sendMessage(msg.chat.id, "❌ El bot requiere permisos de administrador.");
-    }
+    getGrupoConfig(msg.chat.id).adminsCustom.add(msg.reply_to_message.from.id);
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Rango administrativo otorgado.");
 });
 
-bot.onText(/\/stats/, async (msg) => {
-    if (msg.chat.type === 'private') return;
-    const chatId = msg.chat.id;
-    const stats = estadisticasChat[chatId];
-    
-    if (!stats || stats.totalMensajes === 0) {
-        return bot.sendMessage(msg.chat.id, "📊 **ESTADÍSTICAS DEL CHAT**\n- Mensajes totales registrados: 0\n- Usuario más activo: Ninguno aún.");
-    }
-
-    let usuarioMasActivo = "Ninguno";
-    let maxMsgs = -1;
-    for (const uid in stats.usuarios) {
-        if (stats.usuarios[uid].contador > maxMsgs) {
-            maxMsgs = stats.usuarios[uid].contador;
-            usuarioMasActivo = stats.usuarios[uid].nombre;
-        }
-    }
-
-    bot.sendMessage(msg.chat.id, `📊 **ESTADÍSTICAS DEL CHAT**\n💬 Mensajes totales enviados: **${stats.totalMensajes}**\n⭐ Usuario más activo: **@${usuarioMasActivo}** (${maxMsgs} mensajes)`);
-});
-
-bot.onText(/\/config/, async (msg) => {
-    if (msg.chat.type === 'private') return;
-    const cfg = getGrupoConfig(msg.chat.id);
-    bot.sendMessage(msg.chat.id, `⚙️ **OPCIONES DE ADMINISTRACIÓN ACTIVADAS**\n🔗 Antilink: ${cfg.antilink ? 'ON 🟢' : 'OFF 🔴'}\n🔞 AntiNSFW: ${cfg.antinsfw ? 'ON 🟢' : 'OFF 🔴'}\n🛡️️ Antispam: ${cfg.antispam ? 'ON 🟢' : 'OFF 🔴'}\n🛡️ Solo Admins: ${cfg.onlyadmin ? 'ON 🟢' : 'OFF 🔴'}\n🔐 Verificación: ${cfg.modeverificaty ? 'ON 🟢' : 'OFF 🟢'}\n👑 Admins Custom: ${cfg.adminsCustom.size}`, { parse_mode: 'Markdown' });
-});
-
-bot.onText(/\/addadmin/, async (msg) => {
+bot.onText(/\/deladmin(?!\S)/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al mensaje del usuario para asignarlo como admin.");
-    
-    const targetId = msg.reply_to_message.from.id;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.adminsCustom.add(targetId);
-    bot.sendMessage(msg.chat.id, `👑 @${msg.reply_to_message.from.username || msg.reply_to_message.from.first_name} añadido como administrador.`);
+    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Responde al usuario.");
+
+    getGrupoConfig(msg.chat.id).adminsCustom.delete(msg.reply_to_message.from.id);
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Rango administrativo removido.");
 });
 
-bot.onText(/\/deladmin/, async (msg) => {
+bot.onText(/\/resetuser(?!\S)/, async (msg) => {
     if (msg.chat.type === 'private') return;
     if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al usuario para remover su administración.");
-
-    const targetId = msg.reply_to_message.from.id;
-    const cfg = getGrupoConfig(msg.chat.id);
-    cfg.adminsCustom.delete(targetId);
-    bot.sendMessage(msg.chat.id, "👤 Rango de administrador removido al usuario.");
-});
-
-bot.onText(/\/resetuser/, async (msg) => {
-    if (msg.chat.type === 'private') return;
-    if (!await verificarPermisosAdmin(msg.chat.id, msg.from.id)) return;
-    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "⚠️ Responde al usuario que deseas resetear.");
+    if (!msg.reply_to_message) return bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Responde al usuario.");
 
     delete usuariosData[msg.reply_to_message.from.id];
-    bot.sendMessage(msg.chat.id, "♻️ Los datos y la economía de este usuario han sido restablecidos en el bot.");
+    bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗔𝗗𝗠𝗜𝗡 ︱ Registro de usuario reseteado.");
 });
 
-bot.onText(/\/ping/, async (msg) => {
+bot.onText(/\/ping(?!\S)/, async (msg) => {
     const inicio = Date.now();
-    const sent = await bot.sendMessage(msg.chat.id, "🏓 Calculando latencia real...");
-    const fin = Date.now();
-    const latenciaBot = fin - inicio;
-    bot.editMessageText(`🏓 **¡Pong Real!**\n⏱ Latencia: **${latenciaBot} ms**\n🌐 Servidores: **100% Operativos**`, {
+    const sent = await bot.sendMessage(msg.chat.id, "𝖲𝖸𝖲.𝗣𝗜𝗡𝗚 ︱ Midiendo...");
+    const latencia = Date.now() - inicio;
+    bot.editMessageText(`𝖲𝖸𝖲.𝗣𝗜𝗡𝗚 ︱ Pong :: ${latencia} ms`, {
         chat_id: msg.chat.id,
-        message_id: sent.message_id,
-        parse_mode: 'Markdown'
+        message_id: sent.message_id
     });
 });
 
 
 // ==========================================
-// FILTROS Y MONITOREO DE SEGURIDAD AUTOMÁTICA
+// FILTROS DE SEGURIDAD
 // ==========================================
 bot.on('message', async (msg) => {
     if (!msg.text || msg.chat.type === 'private') return;
@@ -1101,17 +860,7 @@ bot.on('message', async (msg) => {
     const userId = msg.from.id;
     const cfg = getGrupoConfig(chatId);
 
-    if (!estadisticasChat[chatId]) {
-        estadisticasChat[chatId] = { totalMensajes: 0, usuarios: {} };
-    }
-    estadisticasChat[chatId].totalMensajes++;
-    if (!estadisticasChat[chatId].usuarios[userId]) {
-        estadisticasChat[chatId].usuarios[userId] = { nombre: msg.from.username || msg.from.first_name, contador: 0 };
-    }
-    estadisticasChat[chatId].usuarios[userId].contador++;
-
-    const esAdmin = await verificarPermisosAdmin(chatId, userId);
-    if (esAdmin) return;
+    if (await verificarPermisosAdmin(chatId, userId)) return;
 
     if (cfg.antilink) {
         const regexLinks = /(https?:\/\/[^\s]+|t\.me\/[^\s]+|www\.[^\s]+)/i;
@@ -1128,37 +877,13 @@ bot.on('message', async (msg) => {
         const palabrasNsfw = /\b(porno|nsfw|xxx|desnudo|semen|coger|pene|vagina|orgy)\b/i;
         if (palabrasNsfw.test(msg.text)) {
             await bot.deleteMessage(chatId, msg.message_id).catch(() => {});
-            bot.sendMessage(chatId, `⚠️ Contenido 18+ bloqueado automáticamente para @${msg.from.username || msg.from.first_name}.`).then(sent => {
-                setTimeout(() => bot.deleteMessage(chatId, sent.message_id).catch(() => {}), 4000);
-            });
             return;
-        }
-    }
-
-    if (cfg.antispam) {
-        const ahora = Date.now();
-        if (!controlSpam[chatId]) controlSpam[chatId] = {};
-        if (!controlSpam[chatId][userId]) controlSpam[chatId][userId] = [];
-
-        controlSpam[chatId][userId].push(ahora);
-        controlSpam[chatId][userId] = controlSpam[chatId][userId].filter(t => ahora - t < 2000);
-
-        if (controlSpam[chatId][userId].length >= 10) {
-            await bot.deleteMessage(chatId, msg.message_id).catch(() => {});
-            try {
-                await bot.restrictChatMember(chatId, userId, {
-                    until_date: Math.floor(Date.now() / 1000) + 300,
-                    permissions: { can_send_messages: false }
-                });
-                bot.sendMessage(chatId, `🚨 @${msg.from.username || msg.from.first_name} fue silenciado 5 minutos por enviar spam masivo.`);
-            } catch {}
-            controlSpam[chatId][userId] = [];
         }
     }
 });
 
 // ==========================================
-// SERVIDOR WEB PARA RENDER
+// SERVIDOR WEB
 // ==========================================
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
