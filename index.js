@@ -1,6 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const http = require('http');
 const fs = require('fs');
+const path = require('path');
 
 const token = process.env.TELEGRAM_TOKEN;
 if (!token) {
@@ -12,8 +13,9 @@ const bot = new TelegramBot(token, { polling: true });
 
 console.log("SPYCT.BOT está encendido y listo en el sistema...");
 
-// URL Raw corregida de GitHub para enviar fotos directamente
-const MENU_IMAGE_URL = "https://raw.githubusercontent.com/j-wl100/Bot.pruebas/b73d29e9c8636b91aeba31ebeef8743fec5b68c8/IMG_20261011_232149_903.jpg";
+// Nombre de la foto en la raíz de tu repositorio
+const NOMBRE_IMAGEN_MENU = 'IMG_20261011_232149_903.jpg';
+const RUTA_LOCAL_FOTO = path.join(__dirname, NOMBRE_IMAGEN_MENU);
 
 // Bases de datos en memoria
 const usuariosData = {};
@@ -63,7 +65,7 @@ async function verificarPermisosAdmin(chatId, userId) {
 }
 
 // ==========================================
-// MENÚ PRINCIPAL CON IMAGEN
+// MENÚ PRINCIPAL CON IMAGEN LOCAL
 // ==========================================
 const menuCompleto = (user) => `𓄧 𖫰     ֺ   𓄧 𖫰      ֺ   𓄧 𖫰      ֺ   𓄧 𖫰      ֺ   𓄧 
 
@@ -179,16 +181,25 @@ const menuCompleto = (user) => `𓄧 𖫰     ֺ   𓄧 𖫰      ֺ   𓄧 𖫰
 
 ─────────────────────┘`;
 
-bot.onText(/\/menu(?!\S)/, (msg) => {
+bot.onText(/\/menu(?!\S)/, async (msg) => {
     const userName = msg.from.username || msg.from.first_name;
     const captionText = menuCompleto(userName);
+    const chatId = msg.chat.id;
 
-    bot.sendPhoto(msg.chat.id, MENU_IMAGE_URL, {
-        caption: captionText
-    }).catch((err) => {
-        console.error("Error al enviar foto del menú:", err);
-        bot.sendMessage(msg.chat.id, captionText);
-    });
+    // Enviar foto local directamente desde el repositorio
+    if (fs.existsSync(RUTA_LOCAL_FOTO)) {
+        try {
+            await bot.sendPhoto(chatId, RUTA_LOCAL_FOTO, { caption: captionText });
+            return;
+        } catch (err) {
+            console.error("Error al enviar archivo de imagen local:", err);
+        }
+    } else {
+        console.warn(`⚠️ No se encontró el archivo ${NOMBRE_IMAGEN_MENU} en la carpeta raíz del bot.`);
+    }
+
+    // Si la foto no existe o falla al enviarla, envía el menú como texto
+    bot.sendMessage(chatId, captionText);
 });
 
 
@@ -207,7 +218,7 @@ bot.onText(/\/diaro(?!\S)/, (msg) => {
 │
 ├────────────────────
 │ 
-│     ⛁  •  𝗛𝗔𝗭 𝗥𝗘𝖢𝗟𝗔𝗠𝗔𝖣𝖮 
+│     ⛁  •  𝗛𝗔𝗭 𝗥Ｅ𝖢𝗟𝗔𝗠𝗔𝖣𝖮 
 │     1,000 BYT-‽
 │
 │
@@ -243,7 +254,7 @@ bot.onText(/\/trabajar(?:\s+(.+))?/, (msg) => {
 ●         𝗣𝗨𝗘𝗦𝗧𝗢  [${puesto}]
 
   
-𝆓       ¡ ᴛᴜʀɴᴏ ᴛᴇʀᴍɪɴᴀᴅᴏ ! 
+𝆓       ¡ ᴛᴜʀɴᴏ ᴛᴇʀᴍɪɴ𝗔ᴅᴏ ! 
 
 
 ${mensajeTrabajo}
@@ -269,7 +280,7 @@ bot.onText(/\/apostar\s+(\d+)/, (msg, match) => {
 
     bot.sendMessage(msg.chat.id, `▉        𝖲𝖸𝖲.𝗕𝗘𝗧   ⟍   𝗚𝗔𝗠𝗕𝗟𝗘
 │
-│  ᴜsᴇʀ  ⋮⋮  @${userName}
+│  ᴜsᴇR  ⋮⋮  @${userName}
 │
 ├────────────────────
 │
